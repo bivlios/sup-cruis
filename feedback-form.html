@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SUP Cruise Prototype Feedback</title>
+  <style>
+    :root{--navy:#073b5c;--blue:#46bde8;--pale:#e9f6fb;--ink:#12374b;--muted:#6b8492;--line:#d9eaf1;--sand:#fff7df}*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#f7fcfe,#eaf5fa);color:var(--ink);font:15px Arial,sans-serif}.shell{max-width:780px;margin:0 auto;padding:30px 18px 60px}.head{background:linear-gradient(135deg,#063552,var(--navy));border-radius:18px;padding:24px;color:white;display:flex;align-items:center;gap:22px;box-shadow:0 16px 40px rgba(7,59,92,.15)}.head img{width:120px}.head h1{margin:0 0 7px;font-size:27px}.head p{margin:0;color:#c8e4ee;line-height:1.5}.notice{margin:18px 0;padding:13px 15px;border:1px solid #f0d48a;background:var(--sand);border-radius:10px;font-size:13px;line-height:1.5}.card{background:white;border:1px solid var(--line);border-radius:15px;padding:22px;box-shadow:0 12px 34px rgba(7,59,92,.07)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}label{display:block;font-size:12px;font-weight:bold}label span{display:block;margin-bottom:7px}input,select,textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:11px;background:white;color:var(--ink);font:inherit}textarea{resize:vertical;min-height:90px}.wide{grid-column:1/-1}.rating{display:flex;gap:8px;flex-wrap:wrap}.rating label{font-weight:normal;border:1px solid var(--line);border-radius:8px;padding:9px 11px;cursor:pointer}.rating input{width:auto;margin-right:5px}.actions{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}.btn{border:1px solid var(--line);border-radius:9px;padding:12px 16px;font-weight:bold;cursor:pointer;background:white;color:var(--ink)}.btn.primary{background:linear-gradient(135deg,var(--navy),#0b668c);color:white;border-color:var(--navy)}#message{margin-top:12px;color:#147fa8;font-weight:bold;font-size:13px}.tasks{margin:18px 0}.tasks h2{font-size:18px}.tasks li{margin:8px 0;line-height:1.4}@media(max-width:620px){.head{align-items:flex-start;flex-direction:column}.head img{width:105px}.grid{grid-template-columns:1fr}.wide{grid-column:auto}.actions .btn{flex:1}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="head"><img src="assets/supcruise-logo.png" alt="SUP Cruise"><div><h1>Prototype feedback</h1><p>Thank you for testing the SUP Cruise business manager. Honest comments will help make the final app simple and useful.</p></div></header>
+    <section class="tasks"><h2>Suggested trial</h2><ol><li>Add a new enquiry and a follow-up date.</li><li>Edit the client and change the stage to Booked.</li><li>Record a deposit and check the remaining balance.</li><li>Add an expense and supplier payment deadline.</li><li>Add or edit a cruise and assign a crew member.</li><li>Prepare a crew list and open a report.</li><li>Repeat one or two actions on your phone.</li></ol></section>
+    <div class="notice"><strong>Please use fictional information only.</strong> Do not enter real passport numbers, customer details or payment references during this prototype test. This form does not send anything automatically.</div>
+    <form class="card" id="feedbackForm">
+      <div class="grid">
+        <label><span>Your name</span><input name="reviewer" value="Hadar"></label>
+        <label><span>Device used</span><select name="device"><option>Computer</option><option>iPhone</option><option>Android phone</option><option>Tablet</option><option>More than one device</option></select></label>
+        <div class="wide"><label><span>Overall experience</span></label><div class="rating"><label><input type="radio" name="rating" value="1 — Very difficult">1 — Very difficult</label><label><input type="radio" name="rating" value="2">2</label><label><input type="radio" name="rating" value="3">3</label><label><input type="radio" name="rating" value="4">4</label><label><input type="radio" name="rating" value="5 — Very easy">5 — Very easy</label></div></div>
+        <label class="wide"><span>What worked well?</span><textarea name="worked" placeholder="Which screens or actions felt easy?"></textarea></label>
+        <label class="wide"><span>What was confusing?</span><textarea name="confusing" placeholder="Tell us exactly where you hesitated or got stuck."></textarea></label>
+        <label class="wide"><span>What information or function is missing?</span><textarea name="missing"></textarea></label>
+        <label><span>Where did you find a problem?</span><select name="screen"><option>No problem</option><option>Dashboard</option><option>Clients & payments</option><option>Cruises & guests</option><option>Finance</option><option>Crew & suppliers</option><option>Marketing</option><option>Reports & backup</option><option>Mobile layout</option></select></label>
+        <label><span>How important is the change?</span><select name="priority"><option>Suggestion</option><option>Helpful</option><option>Important</option><option>Blocks me from working</option></select></label>
+        <label class="wide"><span>Describe the problem and what you expected</span><textarea name="problem" placeholder="A screenshot sent separately is also helpful."></textarea></label>
+        <label class="wide"><span>Would you use this app in your daily work? Why or why not?</span><textarea name="daily"></textarea></label>
+        <label class="wide"><span>Anything else?</span><textarea name="other"></textarea></label>
+      </div>
+      <div class="actions"><button class="btn primary" type="button" id="copyButton">Copy for WhatsApp or email</button><button class="btn" type="button" id="downloadButton">Download feedback</button><button class="btn" type="reset">Clear form</button></div>
+      <div id="message" role="status"></div>
+    </form>
+  </main>
+  <script>
+    const form=document.querySelector('#feedbackForm'),message=document.querySelector('#message');
+    function feedbackText(){const data=new FormData(form),value=name=>data.get(name)||'—';return [`SUP CRUISE PROTOTYPE FEEDBACK`,`Date: ${new Date().toLocaleDateString('en-GB')}`,`Reviewer: ${value('reviewer')}`,`Device: ${value('device')}`,`Rating: ${value('rating')}`,``,`WHAT WORKED WELL`,`----------------`,` ${value('worked')}`,``,`WHAT WAS CONFUSING`,`------------------`,` ${value('confusing')}`,``,`WHAT IS MISSING`,`---------------`,` ${value('missing')}`,``,`PROBLEM AREA: ${value('screen')}`,`PRIORITY: ${value('priority')}`,`${value('problem')}`,``,`DAILY USE`,`---------`,` ${value('daily')}`,``,`OTHER COMMENTS`,`--------------`,` ${value('other')}`].join('\n')}
+    async function copyFeedback(){const text=feedbackText();try{await navigator.clipboard.writeText(text)}catch{const box=document.createElement('textarea');box.value=text;document.body.appendChild(box);box.select();document.execCommand('copy');box.remove()}message.textContent='Feedback copied. Paste it into WhatsApp or email.'}
+    function downloadFeedback(){const blob=new Blob([feedbackText()],{type:'text/plain;charset=utf-8'}),link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='supcruise-prototype-feedback.txt';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);message.textContent='Feedback file downloaded.'}
+    document.querySelector('#copyButton').addEventListener('click',copyFeedback);document.querySelector('#downloadButton').addEventListener('click',downloadFeedback);form.addEventListener('reset',()=>message.textContent='');
+  </script>
+</body>
+</html>
