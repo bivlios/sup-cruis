@@ -13,7 +13,7 @@
 <body>
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
-<div class="brand"><img class="brand-logo" src="assets/supcruise-logo.png?v=20260812" alt="SUP Cruise"><span class="brand-caption">Business manager</span><button class="menu-close" id="menuClose" aria-label="Close menu">×</button></div>
+<div class="brand"><img class="brand-logo" data-supcruise-image="logo" src="assets/supcruise-logo.png?v=20260812" alt="SUP Cruise"><span class="brand-caption">Business manager</span><button class="menu-close" id="menuClose" aria-label="Close menu">×</button></div>
       <p class="nav-label">Daily work</p>
       <nav id="mainNav" class="nav-group">
         <button class="nav-item active" data-view="dashboard"><span>🏠</span>Home</button>
@@ -191,6 +191,7 @@
   <div class="modal-backdrop" id="eventModal"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="eventModalTitle"><div class="modal-head"><div><h2 id="eventModalTitle">Add event</h2><p>Add a meeting, deadline or other business event to the calendar.</p></div><button class="close" data-close="eventModal" aria-label="Close event form">×</button></div><form id="eventForm"><input type="hidden" name="id"><div class="form-grid"><label class="wide">Event title<input name="title" required></label><label>Event type<select name="type"><option>Event</option><option>Meeting</option><option>Deadline</option></select></label><label>Date<input name="date" type="date" required></label><label>End date<input name="endDate" type="date"></label><label>Time<input name="time" type="time"></label><label>Location<input name="location"></label><label>Website / link<input name="website" type="url" placeholder="https://..."></label><label class="wide">Event notes<textarea name="notes" rows="3"></textarea></label></div><div class="modal-actions"><button type="button" class="btn secondary" data-close="eventModal">Cancel</button><button class="btn primary" type="submit">Save event</button></div></form></div></div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="image-assets.js?v=20260812"></script>
   <script src="app.js?v=20260811"></script>
   <script src="enhancements.js?v=20260809"></script>
 </body>

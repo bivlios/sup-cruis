@@ -10,7 +10,7 @@
 </head>
 <body>
   <main class="shell">
-<header class="head"><img src="assets/supcruise-logo.png?v=20260812" alt="SUP Cruise"><div><h1>Prototype feedback</h1><p>Thank you for testing the SUP Cruise business manager. Honest comments will help make the final app simple and useful.</p></div></header>
+<header class="head"><img data-supcruise-image="logo" src="assets/supcruise-logo.png?v=20260812" alt="SUP Cruise"><div><h1>Prototype feedback</h1><p>Thank you for testing the SUP Cruise business manager. Honest comments will help make the final app simple and useful.</p></div></header>
     <section class="tasks"><h2>Suggested trial</h2><ol><li>Add a new enquiry, a follow-up date and mark whether the customer is new or returning.</li><li>Open the client card, create a client quote and try the copy or email action.</li><li>Record a deposit and check the remaining balance.</li><li>Add two supplier quotes for the same cruise, select one and turn it into an expense.</li><li>Attach one invoice to a client and another to a supplier.</li><li>Open a cruise card and check its clients, guests, crew and selected suppliers.</li><li>Add an exhibition website and a task with a deadline.</li><li>Check the calendar and reminder centre, then repeat one or two actions on your phone.</li></ol></section>
     <div class="notice"><strong>Please use fictional information only.</strong> Do not enter real passport numbers, customer details or payment references during this prototype test. This form does not send anything automatically.</div>
     <form class="card" id="feedbackForm">
@@ -31,6 +31,7 @@
       <div id="message" role="status"></div>
     </form>
   </main>
+  <script src="image-assets.js?v=20260812"></script>
   <script>
     const form=document.querySelector('#feedbackForm'),message=document.querySelector('#message');
     function feedbackText(){const data=new FormData(form),value=name=>data.get(name)||'—';return [`SUP CRUISE PROTOTYPE FEEDBACK`,`Date: ${new Date().toLocaleDateString('en-GB')}`,`Reviewer: ${value('reviewer')}`,`Device: ${value('device')}`,`Rating: ${value('rating')}`,``,`WHAT WORKED WELL`,`----------------`,` ${value('worked')}`,``,`WHAT WAS CONFUSING`,`------------------`,` ${value('confusing')}`,``,`WHAT IS MISSING`,`---------------`,` ${value('missing')}`,``,`PROBLEM AREA: ${value('screen')}`,`PRIORITY: ${value('priority')}`,`${value('problem')}`,``,`DAILY USE`,`---------`,` ${value('daily')}`,``,`OTHER COMMENTS`,`--------------`,` ${value('other')}`].join('\n')}
