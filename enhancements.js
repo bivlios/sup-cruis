@@ -1023,7 +1023,7 @@
       const cruise = cruises[index];
       if (!cruise) return;
       const clientCount = bookedClientPlacesFor(cruise.id);
-      card.insertAdjacentHTML('afterbegin', '<div class="cruise-yacht-hero" aria-hidden="true"><img class="cruise-yacht-icon" src="assets/yacht-icon.png" alt="" draggable="false" decoding="async"><i class="cruise-wave cruise-wave-one"></i><i class="cruise-wave cruise-wave-two"></i></div>');
+      card.insertAdjacentHTML('afterbegin', '<div class="cruise-yacht-hero" aria-hidden="true"><img class="cruise-yacht-icon" src="assets/yacht-icon.png?v=20260812" alt="" draggable="false" decoding="async"><i class="cruise-wave cruise-wave-one"></i><i class="cruise-wave cruise-wave-two"></i></div>');
       const capacity = card.querySelector('.cruise-top .status');
       if (capacity) {
         const cancelled = cruiseIsCancelled(cruise);
@@ -1667,7 +1667,7 @@
     const relatedExpenses = state.expenses.filter(expense => Number(expense.cruiseId) === Number(cruise.id)).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
     document.querySelector('#cruiseDetailTitle').textContent = `${cruise.name} · ${formatDate(cruise.startDate)}`;
     document.querySelector('#cruiseDetailBody').innerHTML = `
-      <div class="detail-hero cruise-detail-hero"><img class="cruise-detail-yacht" src="assets/yacht-icon.png" alt="" aria-hidden="true" draggable="false"><div class="cruise-detail-heading"><h3>${esc(cruise.name)}</h3><div class="subtext">${formatDate(cruise.startDate)} – ${formatDate(cruise.endDate)} · ${confirmedClientCount}/${cruise.capacity} ${appLanguage === 'he' ? 'מקומות תפוסים' : 'places booked'}</div></div><span class="status booked">${euro(revenue - expenses)} · ${translatedText('Estimated profit')}</span></div>
+      <div class="detail-hero cruise-detail-hero"><img class="cruise-detail-yacht" src="assets/yacht-icon.png?v=20260812" alt="" aria-hidden="true" draggable="false"><div class="cruise-detail-heading"><h3>${esc(cruise.name)}</h3><div class="subtext">${formatDate(cruise.startDate)} – ${formatDate(cruise.endDate)} · ${confirmedClientCount}/${cruise.capacity} ${appLanguage === 'he' ? 'מקומות תפוסים' : 'places booked'}</div></div><span class="status booked">${euro(revenue - expenses)} · ${translatedText('Estimated profit')}</span></div>
       <div class="detail-kpis"><div class="detail-kpi"><span>Booked revenue</span><strong>${euro(revenue)}</strong></div><div class="detail-kpi"><span>Money received</span><strong>${euro(receivedForCruise(cruise.id))}</strong></div><div class="detail-kpi"><span>Expenses</span><strong>${euro(expenses)}</strong></div></div>
       <div class="room-allocation-strip">
         <div class="room-allocation-chip"><span>Single rooms</span><strong>${roomSummary.single}</strong></div>
