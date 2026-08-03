@@ -1,5 +1,6 @@
 (() => {
   const enhancementTranslations = {
+    'Confirmed clients':'לקוחות מאושרים','Passengers':'נוסעים','Cruise expenses':'הוצאות ההפלגה','Expenses linked to this cruise':'הוצאות המשויכות להפלגה','No expenses linked to this cruise.':'אין הוצאות המשויכות להפלגה.','＋ Add expense to cruise':'＋ הוספת הוצאה להפלגה',
     'Daily work':'עבודה שוטפת',
     'Business tools':'כלים עסקיים',
     'Home':'בית',
@@ -152,6 +153,7 @@
     'SUP guide':'מדריך/ת SUP',
     'Other role':'תפקיד אחר',
     'Crew member':'איש צוות',
+    'Cruise manager':'אחראי/ת הפלגה',
     'Open person details':'פתיחת פרטי איש קשר',
     'Close person details':'סגירת פרטי איש קשר',
     'Contact, assignments, expenses and documents in one place.':'פרטי קשר, שיוכים, הוצאות ומסמכים במקום אחד.',
@@ -341,6 +343,7 @@
     'Exhibition task':'משימת תערוכה',
     'Content task':'משימת תוכן',
     'Supplier payment':'תשלום לספק',
+    'Cruise manager payment':'תשלום לאחראי/ת הפלגה',
     'Invoice payment':'תשלום חשבונית',
     'Computer notifications enabled':'ההתראות במחשב הופעלו',
     'Computer notifications were not allowed':'ההתראות במחשב לא אושרו',
@@ -562,10 +565,10 @@
       item.eurAmount = item.currency === 'EUR' ? Number(item.amount || 0) : Number(item.eurAmount || 0);
     });
     target.expenses.forEach(expense => {
-      const recipientTypes = ['Supplier','Crew member','Partner','Client refund','Other'];
+      const recipientTypes = ['Supplier','Crew member','Cruise manager','Partner','Client refund','Other'];
       if (!recipientTypes.includes(expense.recipientType)) {
         const person = target.people.find(item => Number(item.id) === Number(expense.payeePersonId) || String(item.name || '').trim().toLowerCase() === String(expense.payee || '').trim().toLowerCase());
-        expense.recipientType = expense.managedBy === 'commission' || expense.partnerId ? 'Partner' : expense.clientId || expense.category === 'Client refund' ? 'Client refund' : person?.type === 'Crew' ? 'Crew member' : person?.type === 'Supplier' ? 'Supplier' : 'Other';
+        expense.recipientType = expense.managedBy === 'commission' || expense.partnerId ? 'Partner' : expense.clientId || expense.category === 'Client refund' ? 'Client refund' : expense.category === 'Cruise manager payment' ? 'Cruise manager' : person?.type === 'Crew' ? 'Crew member' : person?.type === 'Supplier' ? 'Supplier' : 'Other';
       }
       expense.entryMode = expense.entryMode === 'paid' ? 'paid' : 'expense';
       expense.partnerId = expense.partnerId ? Number(expense.partnerId) : null;
@@ -727,6 +730,7 @@
     ['Scheduled payment','תשלום מתוכנן'],
     ['Bank transfer','העברה בנקאית'],
     ['Credit card','כרטיס אשראי'],
+    ['Check','צ׳ק'],
     ['Google Search','חיפוש Google'],
     ['Website / SEO','אתר / SEO'],
     ['Catamaran company','חברת קטמרן'],
@@ -979,6 +983,8 @@
     if (rows.length !== tableRows.length) return;
     tableRows.forEach((row, index) => {
       const client = rows[index];
+      const hasPassenger = passengersForClient(client.id).length > 0;
+      row.classList.toggle('passenger-client-row', hasPassenger);
       row.classList.add('clickable-client-row');
       row.dataset.openClientRow = String(client.id);
       row.tabIndex = 0;
@@ -1001,6 +1007,10 @@
       if (actionCell) {
         actionCell.innerHTML = `<span class="row-open-cue">${translatedText('Open client')} <b aria-hidden="true">›</b></span>`;
       }
+      const stageCell = row.querySelector('td[data-label="Stage"]');
+      if (hasPassenger && stageCell && !stageCell.querySelector('.passenger-list-badge')) {
+        stageCell.insertAdjacentHTML('beforeend', `<span class="passenger-list-badge">${translatedText('Passenger')}</span>`);
+      }
     });
   };
 
@@ -1015,10 +1025,16 @@
       const clientCount = bookedClientPlacesFor(cruise.id);
       card.insertAdjacentHTML('afterbegin', '<div class="cruise-yacht-hero" aria-hidden="true"><img class="cruise-yacht-icon" src="assets/yacht-icon.png" alt="" draggable="false" decoding="async"><i class="cruise-wave cruise-wave-one"></i><i class="cruise-wave cruise-wave-two"></i></div>');
       const capacity = card.querySelector('.cruise-top .status');
-      if (capacity) capacity.textContent = `${clientCount}/${cruise.capacity} ${appLanguage === 'he' ? 'מקומות תפוסים' : 'places booked'}`;
+      if (capacity) {
+        const cancelled = cruiseIsCancelled(cruise);
+        capacity.textContent = cancelled ? translatedText('Cancelled cruise') : `${clientCount}/${cruise.capacity} ${appLanguage === 'he' ? 'מקומות תפוסים' : 'places booked'}`;
+        capacity.classList.toggle('cancelled', cancelled);
+        capacity.classList.toggle('booked', !cancelled);
+      }
       const actions = card.querySelector('.cruise-actions');
       if (actions) {
-        actions.innerHTML = `<button class="btn primary compact-btn" type="button" data-open-cruise="${cruise.id}">Open details</button><button class="icon-action" type="button" data-edit-cruise="${cruise.id}">Edit</button>`;
+        const cancelled = cruiseIsCancelled(cruise);
+        actions.innerHTML = `<button class="btn primary compact-btn" type="button" data-open-cruise="${cruise.id}">Open details</button><button class="icon-action" type="button" data-edit-cruise="${cruise.id}">Edit</button>${cancelled ? `<span class="status cancelled">${translatedText('Cancelled cruise')}</span>` : `<button class="icon-action danger" type="button" data-cancel-cruise="${cruise.id}">Cancel cruise</button>`}`;
       }
     });
   };
@@ -1536,8 +1552,7 @@
         translatedText(passenger.gender || ''),
         passenger.passport || '',
         passenger.isPrimary ? translatedText('Primary passenger') : translatedText(passenger.relationship || 'Passenger'),
-        client?.name || '',
-        [passenger.phone, passenger.email].filter(Boolean).join(' · ')
+        client?.name || ''
       ];
     });
     const crewRows = crewForCruise(cruiseId).map(person => [
@@ -1547,8 +1562,7 @@
       translatedText(person.gender || ''),
       person.passport || '',
       translatedText(person.role || 'Crew member'),
-      '',
-      [person.phone, person.email].filter(Boolean).join(' · ')
+      ''
     ]);
     return [...passengerRows, ...crewRows];
   }
@@ -1561,8 +1575,7 @@
       translatedText('Gender'),
       translatedText('Passport number'),
       translatedText('Role / booking'),
-      translatedText('Booking client'),
-      translatedText('Contact')
+      translatedText('Booking client')
     ];
   }
 
@@ -1619,12 +1632,12 @@
       <div class="detail-kpis"><div class="detail-kpi"><span>Total booking price</span><strong>${euro(client.bookingValue)}</strong></div><div class="detail-kpi"><span>Money received</span><strong>${euro(paidFor(client.id))}</strong></div><div class="detail-kpi"><span>Balance</span><strong>${euro(balanceFor(client))}</strong></div></div>
       <div class="detail-section"><h3>Client notes</h3><div class="entity-row"><div class="entity-row-main"><strong>${esc(client.notes || 'No client notes')}</strong><span>${client.stage === 'Booked' ? `Payment: ${formatDate(client.paymentDue)}` : `Follow-up: ${formatDate(client.followup)}`}</span></div></div></div>
       ${client.stage === 'Booked' ? `<div class="detail-section passenger-section"><div class="detail-section-head"><div><h3>Passengers in this booking</h3><p>The booked client is the primary passenger. Add everyone else travelling under the same booking.</p></div>${passengers.length < partySize ? `<button class="btn secondary compact" data-add-passenger-for-client="${client.id}">＋ Add passenger</button>` : ''}</div><div class="passenger-progress"><span><strong>${passengers.length}</strong> ${translatedText('Entered passengers')}</span><span><strong>${partySize}</strong> ${translatedText('Expected from booking')}</span><span class="${completePassengers === passengers.length ? 'complete' : 'incomplete'}"><strong>${completePassengers}/${passengers.length}</strong> ${translatedText('Complete passenger details')}</span></div><div class="entity-list">${passengers.map(passenger => `<div class="entity-row passenger-row"><div class="entity-row-main"><strong>${esc(passenger.name)}${passenger.isPrimary ? `<span class="primary-passenger-badge">${translatedText('Primary passenger')}</span>` : ''}</strong><span>${passengerMeta(passenger)}</span><span class="passenger-readiness ${passengerDetailsComplete(passenger) ? 'complete' : 'incomplete'}">${translatedText(passengerDetailsComplete(passenger) ? 'Passenger details complete' : 'Missing travel details')}</span></div><div class="entity-row-actions"><button class="icon-action" data-edit-passenger="${passenger.id}">Edit</button>${passenger.isPrimary ? '' : `<button class="icon-action danger" data-delete-passenger="${passenger.id}">Delete</button>`}</div></div>`).join('') || empty('No travellers in this booking yet.')}</div><div class="sensitive-inline-note">${translatedText('Sensitive passenger information is stored only in this browser in the prototype. Share this report only with authorised people.')}</div></div>` : ''}
-      <div class="detail-section"><h3>Google Form response</h3><div class="entity-row google-form-row"><div class="entity-row-main"><strong>${googleFormUrl ? 'Linked to this client' : 'No Google Form response linked'}</strong><span>Keep the individual response link with the client record.</span></div><div class="entity-row-actions">${googleFormUrl ? `<a class="icon-action" href="${esc(googleFormUrl)}" target="_blank" rel="noopener">Open linked response ↗</a>` : ''}<button class="icon-action" data-edit-client="${client.id}">Link / change form</button></div></div></div>
-      <div class="detail-section"><h3>Client quotes</h3><div class="entity-list">${quotes.map(quote => `<div class="entity-row"><div class="entity-row-main"><strong>${esc(quote.quoteNumber)} · ${euro(quote.amount)}</strong><span>${formatDate(quote.quoteDate)} · ${esc(translatedText(quote.status))}</span></div><div class="entity-row-actions"><button class="icon-action" data-whatsapp-client-quote="${quote.id}">Open WhatsApp</button>${client.email ? `<button class="icon-action" data-email-client-quote="${quote.id}">Open email</button>` : ''}<button class="icon-action" data-edit-client-quote="${quote.id}">Edit</button></div></div>`).join('') || empty('No client quotes yet.')}</div></div>
-      <div class="detail-section"><h3>Invoices</h3><div class="entity-list">${invoices.map(invoice => `<div class="entity-row"><div class="entity-row-main"><strong>${esc(invoice.invoiceNumber)} · ${euro(invoice.amount)}</strong><span>${formatDate(invoice.issueDate)} · ${esc(translatedText(invoice.status))}</span></div><div class="entity-row-actions"><button class="icon-action" data-edit-invoice="${invoice.id}">Edit</button>${invoice.attachmentName ? `<button class="icon-action" data-download-document="invoice:${invoice.id}" data-document-name="${esc(invoice.attachmentName)}">Download file</button>` : ''}</div></div>`).join('') || empty('No invoices yet.')}</div></div>
-      <div class="detail-section"><h3>Payment history</h3><div class="entity-list">${payments.map(payment => `<div class="entity-row"><div class="entity-row-main"><strong>${formatDate(payment.date)} · ${money(payment.amount,payment.currency)}</strong><span>${esc(payment.method)}${payment.reference ? ` · ${esc(payment.reference)}` : ''}${payment.currency !== 'EUR' ? ` · ${euro(paymentEurValue(payment))} ${translatedText('for balance')}` : ''}</span></div><button class="icon-action" data-edit-payment="${payment.id}">Edit</button></div>`).join('') || empty('No payments match this search.')}</div></div>
+      <div class="detail-section"><h3>Google Form response</h3><div class="entity-row google-form-row"><div class="entity-row-main"><strong>${googleFormUrl ? 'Linked to this client' : 'No Google Form response linked'}</strong><span>Keep the individual response link with the client record.</span></div><div class="entity-row-actions">${googleFormUrl ? `<a class="icon-action" href="${esc(googleFormUrl)}" target="_blank" rel="noopener">Open linked response ↗</a><button class="icon-action danger" data-clear-google-form="${client.id}">Remove link</button>` : ''}<button class="icon-action" data-edit-client="${client.id}">Link / change form</button></div></div></div>
+      <div class="detail-section"><div class="detail-section-head"><div><h3>Client quotes</h3><p>Create and send the offer from this client card. Passenger records do not contain quote actions.</p></div></div><div class="entity-list">${quotes.map(quote => `<div class="entity-row"><div class="entity-row-main"><strong>${esc(quote.quoteNumber)} · ${euro(quote.amount)}</strong><span>${formatDate(quote.quoteDate)} · ${esc(translatedText(quote.status))}</span></div><div class="entity-row-actions"><button class="icon-action" data-whatsapp-client-quote="${quote.id}">Send via WhatsApp</button>${client.email ? `<button class="icon-action" data-email-client-quote="${quote.id}">Send by email</button>` : ''}<button class="icon-action" data-edit-client-quote="${quote.id}">Edit</button><button class="icon-action danger" data-delete-client-quote="${quote.id}">Delete</button></div></div>`).join('') || empty('No client quotes yet.')}</div></div>
+      <div class="detail-section"><h3>Invoices</h3><div class="entity-list">${invoices.map(invoice => `<div class="entity-row"><div class="entity-row-main"><strong>${esc(invoice.invoiceNumber)} · ${euro(invoice.amount)}</strong><span>${formatDate(invoice.issueDate)} · ${esc(translatedText(invoice.status))}</span></div><div class="entity-row-actions"><button class="icon-action" data-edit-invoice="${invoice.id}">Edit</button><button class="icon-action danger" data-delete-invoice="${invoice.id}">Delete</button>${invoice.attachmentName ? `<button class="icon-action" data-download-document="invoice:${invoice.id}" data-document-name="${esc(invoice.attachmentName)}">Download file</button>` : ''}</div></div>`).join('') || empty('No invoices yet.')}</div></div>
+      <div class="detail-section"><h3>Payment history</h3><div class="entity-list">${payments.map(payment => { const cancelled = payment.status === 'Cancelled'; return `<div class="entity-row ${cancelled ? 'cancelled-payment-row' : ''}"><div class="entity-row-main"><strong>${formatDate(payment.date)} · ${money(payment.amount,payment.currency)}</strong><span>${esc(payment.method)} · ${translatedText(cancelled ? 'Cancelled' : 'Received')}${payment.reference ? ` · ${esc(payment.reference)}` : ''}${payment.currency !== 'EUR' ? ` · ${euro(paymentEurValue(payment))} ${translatedText('for balance')}` : ''}</span></div><div class="entity-row-actions">${cancelled ? `<button type="button" class="icon-action" data-restore-payment="${payment.id}">Restore</button>` : `<button type="button" class="icon-action" data-edit-payment="${payment.id}">Edit</button><button type="button" class="icon-action danger" data-cancel-payment="${payment.id}">Cancel payment</button>`}</div></div>`; }).join('') || empty('No payments match this search.')}</div></div>
     `;
-    document.querySelector('#clientDetailActions').innerHTML = `<button class="btn secondary" data-edit-client="${client.id}">Edit client</button>${client.stage === 'Booked' && balanceFor(client) ? `<button class="btn secondary" data-pay-client="${client.id}">Record client payment</button>` : ''}<button class="btn primary" data-create-client-quote="${client.id}">Create and send quote</button><button class="btn secondary" data-create-client-invoice="${client.id}">Add client invoice</button><button class="btn secondary danger" data-delete-client="${client.id}">Delete</button>`;
+    document.querySelector('#clientDetailActions').innerHTML = `<button class="btn secondary" data-edit-client="${client.id}">Edit client</button>${client.stage === 'Booked' && balanceFor(client) ? `<button class="btn secondary" data-pay-client="${client.id}">Record client payment</button>` : ''}<button class="btn primary" data-create-client-quote="${client.id}">Create client quote</button><button class="btn secondary" data-create-client-invoice="${client.id}">Add client invoice</button><button class="btn secondary danger" data-delete-client="${client.id}">Delete</button>`;
     openModal('clientDetailModal');
     applyLanguage();
   }
@@ -1651,6 +1664,7 @@
     const selectedQuotes = state.supplierQuotes.filter(quote => Number(quote.cruiseId) === Number(cruise.id) && quote.status === 'Selected');
     const revenue = bookedFor(cruise.id);
     const expenses = expenseFor(cruise.id);
+    const relatedExpenses = state.expenses.filter(expense => Number(expense.cruiseId) === Number(cruise.id)).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
     document.querySelector('#cruiseDetailTitle').textContent = `${cruise.name} · ${formatDate(cruise.startDate)}`;
     document.querySelector('#cruiseDetailBody').innerHTML = `
       <div class="detail-hero cruise-detail-hero"><img class="cruise-detail-yacht" src="assets/yacht-icon.png" alt="" aria-hidden="true" draggable="false"><div class="cruise-detail-heading"><h3>${esc(cruise.name)}</h3><div class="subtext">${formatDate(cruise.startDate)} – ${formatDate(cruise.endDate)} · ${confirmedClientCount}/${cruise.capacity} ${appLanguage === 'he' ? 'מקומות תפוסים' : 'places booked'}</div></div><span class="status booked">${euro(revenue - expenses)} · ${translatedText('Estimated profit')}</span></div>
@@ -1663,12 +1677,118 @@
       </div>
       <div class="detail-section"><div class="detail-section-head"><div><h3>Confirmed bookings</h3><p>These group sizes use the cruise capacity.</p></div></div><div class="entity-list">${clientRows(confirmedClients) || empty('No confirmed bookings.')}</div></div>
       ${enquiryClients.length ? `<div class="detail-section enquiry-client-section"><div class="detail-section-head"><div><h3>Enquiries linked to this cruise</h3><p>These clients are interested but do not use capacity yet.</p></div></div><div class="entity-list">${clientRows(enquiryClients)}</div></div>` : ''}
-      <div class="detail-section passenger-section"><div class="detail-section-head"><div><h3>Passenger list</h3><p>All booked passengers assigned to this cruise.</p></div><span class="booking-client-badge">${passengers.length}/${confirmedClientCount}</span></div><div class="entity-list">${passengers.map(passenger => { const bookingClient = clientBy(passenger.clientId); return `<div class="entity-row passenger-row"><div class="entity-row-main"><strong>${esc(passenger.name)}${passenger.isPrimary ? `<span class="primary-passenger-badge">${translatedText('Primary passenger')}</span>` : ''}</strong><span>${esc(bookingClient?.name || '—')} · ${passengerMeta(passenger)}</span><span class="passenger-readiness ${passengerDetailsComplete(passenger) ? 'complete' : 'incomplete'}">${translatedText(passengerDetailsComplete(passenger) ? 'Passenger details complete' : 'Missing travel details')}</span></div><button class="icon-action" data-edit-passenger="${passenger.id}">Edit</button></div>`; }).join('') || empty('No travellers assigned.')}</div></div>
-      <div class="detail-section"><h3>Crew</h3><div class="entity-list">${crew.map(person => `<div class="entity-row"><div class="entity-row-main"><strong>${esc(person.name)}</strong><span>${esc(translatedText(person.role))} · ${esc(person.phone || person.email || '—')}</span><span>${esc(translatedText('Date of birth'))}: ${esc(person.dob ? formatDate(person.dob) : '—')} · ${esc(translatedText('Gender'))}: ${esc(person.gender ? translatedText(person.gender) : '—')} · ${esc(translatedText('Passport number'))}: ${esc(person.passport || '—')}</span></div><button class="icon-action" data-edit-person="${person.id}">Edit</button></div>`).join('') || empty('No crew assigned.')}</div></div>
+      <div class="detail-section passenger-section"><div class="detail-section-head"><div><h3>Passenger list</h3><p>All booked passengers assigned to this cruise.</p></div><span class="booking-client-badge">${passengers.length}/${confirmedClientCount}</span></div><div class="entity-list">${passengers.map(passenger => { const bookingClient = clientBy(passenger.clientId); return `<div class="entity-row passenger-row"><div class="entity-row-main"><strong>${esc(passenger.name)}${passenger.isPrimary ? `<span class="primary-passenger-badge">${translatedText('Primary passenger')}</span>` : ''}</strong><span>${esc(bookingClient?.name || '—')} · ${passengerMeta(passenger)}</span><span class="passenger-readiness ${passengerDetailsComplete(passenger) ? 'complete' : 'incomplete'}">${translatedText(passengerDetailsComplete(passenger) ? 'Passenger details complete' : 'Missing travel details')}</span></div><div class="entity-row-actions"><button class="icon-action" data-edit-passenger="${passenger.id}">Edit</button>${passenger.isPrimary ? '' : `<button class="icon-action danger" data-delete-passenger="${passenger.id}">Delete</button>`}</div></div>`; }).join('') || empty('No travellers assigned.')}</div></div>
+      <div class="detail-section"><h3>Crew</h3><div class="entity-list">${crew.map(person => `<div class="entity-row"><div class="entity-row-main"><strong>${esc(person.name)}</strong><span>${esc(translatedText(person.role))} · ${esc(person.phone || person.email || '—')}</span><span>${esc(translatedText('Date of birth'))}: ${esc(person.dob ? formatDate(person.dob) : '—')} · ${esc(translatedText('Gender'))}: ${esc(person.gender ? translatedText(person.gender) : '—')} · ${esc(translatedText('Passport number'))}: ${esc(person.passport || '—')}</span></div><div class="entity-row-actions"><button class="icon-action" data-edit-person="${person.id}">Edit</button><button class="icon-action danger" data-delete-person="${person.id}">Delete</button></div></div>`).join('') || empty('No crew assigned.')}</div></div>
       <div class="sensitive-inline-note cruise-report-note">${translatedText('Sensitive passenger information is stored only in this browser in the prototype. Share this report only with authorised people.')}</div>
-      <div class="detail-section"><h3>Selected supplier quotes</h3><div class="entity-list">${selectedQuotes.map(quote => `<div class="entity-row"><div class="entity-row-main"><strong>${esc(translatedText(quote.service))} · ${esc(quote.providerName)}</strong><span>${euro(quote.amount)}${quote.expenseId ? ` · ${translatedText('Expense created')}` : ''}</span></div><div class="entity-row-actions"><button class="icon-action" data-edit-supplier-quote="${quote.id}">Edit</button>${!quote.expenseId ? `<button class="icon-action" data-create-quote-expense="${quote.id}">Create expense</button>` : ''}</div></div>`).join('') || empty('No selected suppliers.')}</div></div>
+      <div class="detail-section"><h3>Selected supplier quotes</h3><div class="entity-list">${selectedQuotes.map(quote => `<div class="entity-row"><div class="entity-row-main"><strong>${esc(translatedText(quote.service))} · ${esc(quote.providerName)}</strong><span>${euro(quote.amount)}${quote.expenseId ? ` · ${translatedText('Expense created')}` : ''}</span></div><div class="entity-row-actions"><button class="icon-action" data-edit-supplier-quote="${quote.id}">Edit</button><button class="icon-action danger" data-delete-supplier-quote="${quote.id}">Delete</button>${!quote.expenseId ? `<button class="icon-action" data-create-quote-expense="${quote.id}">Create expense</button>` : ''}</div></div>`).join('') || empty('No selected suppliers.')}</div></div>
     `;
-    document.querySelector('#cruiseDetailActions').innerHTML = `<button class="btn primary" data-copy-cruise-report="${cruise.id}">Copy cruise report</button><button class="btn secondary" data-download-cruise-report="${cruise.id}">Download cruise report CSV</button><button class="btn secondary" data-edit-cruise="${cruise.id}">Edit cruise</button><button class="btn secondary danger" data-delete-cruise="${cruise.id}">Delete</button>`;
+    const detailBody = document.querySelector('#cruiseDetailBody');
+    const detailSections = [...detailBody.querySelectorAll(':scope > .detail-section')];
+    const sectionWithHeading = heading => detailSections.find(section => section.querySelector('h3')?.textContent.trim() === heading);
+    const confirmedSection = sectionWithHeading('Confirmed bookings');
+    const enquirySection = sectionWithHeading('Enquiries linked to this cruise');
+    const passengerSection = detailBody.querySelector(':scope > .passenger-section');
+    const crewSection = sectionWithHeading('Crew');
+    const supplierSection = sectionWithHeading('Selected supplier quotes');
+    const sensitiveNote = detailBody.querySelector(':scope > .sensitive-inline-note');
+    const tabDefinitions = [['clients', 'Confirmed clients', confirmedClients.length], ['passengers', 'Passengers', passengers.length], ['crew', 'Crew & suppliers', crew.length + selectedQuotes.length], ['expenses', 'Cruise expenses', relatedExpenses.length]];
+    const tabs = document.createElement('div');
+    tabs.className = 'cruise-detail-tabs';
+    tabs.setAttribute('role', 'tablist');
+    tabs.setAttribute('aria-label', 'Cruise detail sections');
+    tabDefinitions.forEach(([key, label, count], index) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'cruise-detail-tab' + (index === 0 ? ' active' : '');
+      button.setAttribute('role', 'tab');
+      button.setAttribute('aria-selected', index === 0 ? 'true' : 'false');
+      button.setAttribute('aria-controls', 'cruise-detail-panel-' + key);
+      button.dataset.cruiseDetailTab = key;
+      button.append(document.createTextNode(label));
+      const countBadge = document.createElement('span');
+      countBadge.className = 'cruise-detail-tab-count';
+      countBadge.textContent = String(count);
+      button.append(countBadge);
+      tabs.append(button);
+    });
+    const panels = document.createElement('div');
+    panels.className = 'cruise-detail-panels';
+    const panelMap = {};
+    tabDefinitions.forEach(([key]) => {
+      const panel = document.createElement('section');
+      panel.className = 'cruise-detail-panel' + (key === 'clients' ? ' active' : '');
+      panel.id = 'cruise-detail-panel-' + key;
+      panel.dataset.cruiseDetailPanel = key;
+      panel.setAttribute('role', 'tabpanel');
+      panel.hidden = key !== 'clients';
+      panelMap[key] = panel;
+      panels.append(panel);
+    });
+    const expenseSection = document.createElement('div');
+    expenseSection.className = 'detail-section cruise-expenses-section';
+    const expenseHead = document.createElement('div');
+    expenseHead.className = 'detail-section-head';
+    const expenseHeadCopy = document.createElement('div');
+    const expenseTitle = document.createElement('h3');
+    expenseTitle.textContent = 'Cruise expenses';
+    const expenseHelp = document.createElement('p');
+    expenseHelp.textContent = 'Expenses linked to this cruise.';
+    expenseHeadCopy.append(expenseTitle, expenseHelp);
+    const addCruiseExpense = document.createElement('button');
+    addCruiseExpense.type = 'button';
+    addCruiseExpense.className = 'btn secondary compact';
+    addCruiseExpense.dataset.addCruiseExpense = String(cruise.id);
+    addCruiseExpense.textContent = '＋ Add expense to cruise';
+    expenseHead.append(expenseHeadCopy, addCruiseExpense);
+    const expenseList = document.createElement('div');
+    expenseList.className = 'entity-list';
+    if (!relatedExpenses.length) expenseList.innerHTML = empty('No expenses linked to this cruise.');
+    relatedExpenses.forEach(expense => {
+      const row = document.createElement('div');
+      row.className = 'entity-row';
+      const main = document.createElement('div');
+      main.className = 'entity-row-main';
+      const strong = document.createElement('strong');
+      strong.textContent = translatedText(expense.category) + ' · ' + euro(expense.amount);
+      const meta = document.createElement('span');
+      const timing = expense.status === 'Paid' ? translatedText('Paid on') + ': ' + formatDate(expense.paidDate || expense.date) : translatedText('Due date') + ': ' + formatDate(expense.dueDate);
+      meta.textContent = (expense.payee || '—') + ' · ' + translatedText(expense.status) + ' · ' + timing;
+      main.append(strong, meta);
+      const actions = document.createElement('div');
+      actions.className = 'entity-row-actions';
+      if (expense.managedBy === 'commission') {
+        const partners = document.createElement('button');
+        partners.type = 'button';
+        partners.className = 'icon-action';
+        partners.dataset.view = 'partners';
+        partners.textContent = 'Open Partners';
+        actions.append(partners);
+      } else {
+        const edit = document.createElement('button');
+        edit.type = 'button';
+        edit.className = 'icon-action';
+        edit.dataset.editExpense = String(expense.id);
+        edit.textContent = 'Edit';
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'icon-action danger';
+        remove.dataset.deleteExpense = String(expense.id);
+        remove.textContent = 'Delete';
+        actions.append(edit, remove);
+      }
+      row.append(main, actions);
+      expenseList.append(row);
+    });
+    expenseSection.append(expenseHead, expenseList);
+    if (confirmedSection) panelMap.clients.append(confirmedSection);
+    if (enquirySection) panelMap.clients.append(enquirySection);
+    if (passengerSection) panelMap.passengers.append(passengerSection);
+    if (sensitiveNote) panelMap.passengers.append(sensitiveNote);
+    if (crewSection) panelMap.crew.append(crewSection);
+    if (supplierSection) panelMap.crew.append(supplierSection);
+    panelMap.expenses.append(expenseSection);
+    detailBody.append(tabs, panels);
+    document.querySelector('#cruiseDetailActions').innerHTML = `<button class="btn primary" type="button" data-copy-cruise-report="${cruise.id}">Copy cruise report</button><button class="btn secondary" type="button" data-download-cruise-report="${cruise.id}">Download cruise report CSV</button><button class="btn secondary" type="button" data-edit-cruise="${cruise.id}">Edit cruise</button>${cruiseIsCancelled(cruise) ? `<span class="status cancelled">${translatedText('Cancelled cruise')}</span>` : `<button class="btn secondary danger" type="button" data-cancel-cruise="${cruise.id}">Cancel cruise</button>`}`;
     openModal('cruiseDetailModal');
     applyLanguage();
   }
@@ -1740,15 +1860,15 @@
         </div>` : `
         <div class="detail-section">
           <h3>Supplier invoices</h3>
-          <div class="entity-list">${invoices.map(invoice => `<div class="entity-row"><div class="entity-row-main"><strong>${esc(invoice.invoiceNumber)} · ${euro(invoice.amount)}</strong><span>${formatDate(invoice.issueDate)} · ${esc(translatedText(invoice.status))}${invoice.dueDate ? ` · ${translatedText('Due date')}: ${formatDate(invoice.dueDate)}` : ''}</span></div><div class="entity-row-actions"><button class="icon-action" data-edit-invoice="${invoice.id}">Edit</button>${invoice.attachmentName ? `<button class="icon-action" data-download-document="invoice:${invoice.id}" data-document-name="${esc(invoice.attachmentName)}">Download file</button>` : ''}</div></div>`).join('') || empty('No supplier invoices.')}</div>
+        <div class="entity-list">${invoices.map(invoice => `<div class="entity-row"><div class="entity-row-main"><strong>${esc(invoice.invoiceNumber)} · ${euro(invoice.amount)}</strong><span>${formatDate(invoice.issueDate)} · ${esc(translatedText(invoice.status))}${invoice.dueDate ? ` · ${translatedText('Due date')}: ${formatDate(invoice.dueDate)}` : ''}</span></div><div class="entity-row-actions"><button class="icon-action" data-edit-invoice="${invoice.id}">Edit</button><button class="icon-action danger" data-delete-invoice="${invoice.id}">Delete</button>${invoice.attachmentName ? `<button class="icon-action" data-download-document="invoice:${invoice.id}" data-document-name="${esc(invoice.attachmentName)}">Download file</button>` : ''}</div></div>`).join('') || empty('No supplier invoices.')}</div>
         </div>
         <div class="detail-section">
           <h3>Supplier quote history</h3>
-          <div class="entity-list">${quotes.map(quote => `<div class="entity-row"><div class="entity-row-main"><strong>${esc(translatedText(quote.service))} · ${euro(quote.amount)}</strong><span>${formatDate(quote.quoteDate)} · ${esc(translatedText(quote.status))} · ${esc(cruiseName(quote.cruiseId))}</span></div><button class="icon-action" data-edit-supplier-quote="${quote.id}">Edit</button></div>`).join('') || empty('No supplier quotes.')}</div>
+          <div class="entity-list">${quotes.map(quote => `<div class="entity-row"><div class="entity-row-main"><strong>${esc(translatedText(quote.service))} · ${euro(quote.amount)}</strong><span>${formatDate(quote.quoteDate)} · ${esc(translatedText(quote.status))} · ${esc(cruiseName(quote.cruiseId))}</span></div><div class="entity-row-actions"><button class="icon-action" data-edit-supplier-quote="${quote.id}">Edit</button><button class="icon-action danger" data-delete-supplier-quote="${quote.id}">Delete</button></div></div>`).join('') || empty('No supplier quotes.')}</div>
         </div>`}
       <div class="detail-section">
         <h3>Related expenses</h3>
-        <div class="entity-list">${expenses.map(expense => `<div class="entity-row"><div class="entity-row-main"><strong>${esc(translatedText(expense.category))} · ${euro(expense.amount)}</strong><span>${formatDate(expense.date)} · ${esc(translatedText(expense.status))} · ${esc(cruiseName(expense.cruiseId))}</span></div><button class="icon-action" data-edit-expense="${expense.id}">Edit</button></div>`).join('') || empty('No related expenses.')}</div>
+        <div class="entity-list">${expenses.map(expense => `<div class="entity-row"><div class="entity-row-main"><strong>${esc(translatedText(expense.category))} · ${euro(expense.amount)}</strong><span>${formatDate(expense.date)} · ${esc(translatedText(expense.status))} · ${esc(cruiseName(expense.cruiseId))}</span></div><div class="entity-row-actions">${expense.managedBy === 'commission' ? `<button class="icon-action" data-view="partners">Open Partners</button>` : `<button class="icon-action" data-edit-expense="${expense.id}">Edit</button><button class="icon-action danger" data-delete-expense="${expense.id}">Delete</button>`}</div></div>`).join('') || empty('No related expenses.')}</div>
       </div>
     `;
     document.querySelector('#personDetailActions').innerHTML = `<button class="btn secondary" data-edit-person="${person.id}">Edit contact</button>${person.type === 'Supplier' ? `<button class="btn primary" data-create-supplier-invoice="${person.id}">＋ Invoice</button>` : ''}<button class="btn secondary danger" data-delete-person="${person.id}">Delete</button>`;
@@ -2145,6 +2265,27 @@
 
   document.addEventListener('click', async event => {
     const target = event.target;
+    const cruiseDetailTab = target.closest('[data-cruise-detail-tab]');
+    if (cruiseDetailTab) {
+      const modal = cruiseDetailTab.closest('#cruiseDetailModal');
+      const selectedTab = cruiseDetailTab.dataset.cruiseDetailTab;
+      modal?.querySelectorAll('[data-cruise-detail-tab]').forEach(button => {
+        const active = button === cruiseDetailTab;
+        button.classList.toggle('active', active);
+       button.setAttribute('aria-selected', String(active));
+     });
+      modal?.querySelectorAll('[data-cruise-detail-panel]').forEach(panel => {
+        const active = panel.dataset.cruiseDetailPanel === selectedTab;
+        panel.classList.toggle('active', active);
+        panel.hidden = !active;
+      });
+    }
+    const addCruiseExpenseButton = target.closest?.('[data-add-cruise-expense]');
+    if (addCruiseExpenseButton) {
+      prepareExpense();
+      const form = document.querySelector('#expenseForm');
+      if (form?.elements.cruiseId) form.elements.cruiseId.value = addCruiseExpenseButton.dataset.addCruiseExpense;
+    }
     const personRow = target.closest?.('[data-open-person-row]');
     if (personRow && !target.closest('button,a,input,select,textarea,label')) {
       preparePersonDetail(Number(personRow.dataset.openPersonRow));
@@ -2261,6 +2402,15 @@
       await deleteDocumentFile(`invoice:${invoiceId}`);
       render();
       showToast('Invoice deleted');
+    }
+    const clearGoogleFormButton = target.closest('[data-clear-google-form]');
+    if (clearGoogleFormButton && askConfirm('Remove Google Form link from this client?')) {
+      const client = clientBy(Number(clearGoogleFormButton.dataset.clearGoogleForm));
+      if (client) {
+        client.googleFormUrl = '';
+        prepareClientDetail(client.id);
+        showToast('Google Form link removed');
+      }
     }
     const documentButton = target.closest('[data-download-document]');
     if (documentButton) await downloadSavedDocument(documentButton.dataset.downloadDocument, documentButton.dataset.documentName);

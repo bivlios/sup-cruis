@@ -7,6 +7,7 @@
   --red-soft:#fff0ec;
   --gold-soft:#fff6dc;
 }
+.cruise-detail-tabs{display:flex;gap:8px;margin:18px 0 4px;padding:6px;overflow-x:auto;border:1px solid #bfe3ef;border-radius:14px;background:#eaf8fc}.cruise-detail-tab{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:145px;min-height:44px;padding:0 14px;border:1px solid transparent;border-radius:10px;background:transparent;color:#176783;font-size:13px;font-weight:800;white-space:nowrap;cursor:pointer}.cruise-detail-tab:hover{background:rgba(255,255,255,.75)}.cruise-detail-tab.active{border-color:#8dcddd;background:white;color:#075a84;box-shadow:0 3px 10px rgba(7,91,136,.12)}.cruise-detail-tab-count{display:inline-grid;place-items:center;min-width:23px;height:23px;padding:0 6px;border-radius:999px;background:#d6f1f7;color:#075a84;font-size:12px}.cruise-detail-tab.active .cruise-detail-tab-count{background:#0c82b2;color:white}.cruise-detail-panels{min-height:180px}.cruise-detail-panel[hidden]{display:none}.cruise-detail-panel>.detail-section:first-child{margin-top:10px}.cruise-expenses-section .detail-section-head{align-items:center}.cruise-expenses-section .entity-row-main strong{font-size:14px}.cruise-expenses-section .entity-row-main span{font-size:12px}@media(max-width:700px){.cruise-detail-tabs{margin-inline:-4px}.cruise-detail-tab{flex:1;min-width:132px;padding-inline:10px;font-size:12px}.cruise-expenses-section .detail-section-head{align-items:stretch}}
 
 body{background:#f4f9fb}
 .card{box-shadow:0 7px 24px rgba(7,59,92,.055)}
@@ -14,6 +15,11 @@ body{background:#f4f9fb}
 .nav-label-secondary{margin-top:22px}
 .nav-group{gap:3px}
 .sidebar-note{box-shadow:none}
+
+.cruise-detail-tab{background:#fff;border-color:#9ccddd;box-shadow:0 2px 6px rgba(7,91,136,.10)}
+.cruise-detail-tab:hover{background:#f7fdff;border-color:#63b7cf;box-shadow:0 4px 10px rgba(7,91,136,.16)}
+.cruise-detail-tab.active{background:#0c82b2;border-color:#075a84;color:#fff;box-shadow:0 4px 12px rgba(7,91,136,.25)}
+.cruise-detail-tab.active .cruise-detail-tab-count{background:#fff;color:#075a84}
 .sidebar{overflow-y:auto}
 .sidebar-bottom-actions{display:grid;gap:11px;margin-top:auto;padding-top:20px}
 .sidebar-calendar.nav-item{
@@ -71,6 +77,19 @@ html[dir="rtl"] .sidebar-calendar.nav-item,html[dir="rtl"] .sidebar-calendar.nav
 }
 .sidebar-backup-button:hover{background:#0b668c;transform:translateY(-1px)}
 .sidebar-backup small{display:block;margin-top:8px;color:#6e5724;font-size:10px;font-weight:700}
+.finance-panel #recordPaymentButton,
+.finance-panel [data-pay-client],
+.finance-panel [data-pay-installment]{
+  background:#e4f7e9;
+  border-color:#b4e3c2;
+  color:#237348;
+}
+.finance-panel #recordPaymentButton{position:relative;inset-inline-start:6px}
+.finance-panel #recordPaymentButton:hover,
+.finance-panel [data-pay-client]:hover,
+.finance-panel [data-pay-installment]:hover{background:#cff0d8;border-color:#8dd0a4;color:#1b603b}
+.finance-panel #addExpenseButton{background:#fff0f0;border-color:#efb8b8;color:#a94d4d}
+.finance-panel #addExpenseButton:hover{background:#ffe0e0;border-color:#df9696;color:#8f3636}
 .page-actions>p{font-size:13px;line-height:1.55}
 
 .reminder-button{
@@ -214,6 +233,8 @@ html[dir="rtl"] .module-section>summary::after{right:auto;left:20px}
 .panel-actionbar>span,.panel-actionbar>div>span{font-size:12px;color:var(--muted)}
 .panel-actionbar>div:first-child{display:grid;gap:3px}
 .panel-actionbar>div:last-child{display:flex;gap:8px;flex-wrap:wrap}
+html[dir="rtl"] .finance-panel .panel-actionbar>div:last-child,
+html[dir="rtl"] .finance-panel .panel-actionbar>.btn:last-child{order:-1}
 .finance-panel>.module-section{margin-top:0;margin-bottom:15px}
 
 .quick-action-grid{
@@ -993,4 +1014,76 @@ html[dir="rtl"] .primary-passenger-badge{margin:0 8px 0 0!important}
   .cruise-detail-hero{grid-template-columns:auto minmax(0,1fr)}
   .cruise-detail-hero>.status{grid-column:1/-1;justify-self:start}
   .cruise-detail-modal>.modal-head{margin:-18px -18px 18px;padding:18px}
+}
+
+/* Final readability pass: keep every operational label comfortable to read. */
+body{font-size:17px}
+.nav-item{font-size:16px}
+.nav-item b,.brand small,.brand-caption{font-size:13px}
+.sidebar-note,.eyebrow,.page-actions>p{font-size:15px}
+.sidebar-backup-kicker{font-size:13px}
+.sidebar-backup strong,.sidebar-calendar-copy strong{font-size:17px}
+.sidebar-backup p,.sidebar-calendar-copy small,.sidebar-backup-button{font-size:14px}
+.sidebar-backup small{font-size:13px}
+.btn{font-size:15px}
+.text-btn{font-size:14px}
+h1{font-size:clamp(30px,3vw,40px)}
+h2{font-size:22px}
+.kpi span,.section-head p,.modal-head p,.section-divider p,.count-pill,.empty,.details dt,.money-row,.cruise-date,.task-title,.advice-item,.storage-notice,.privacy-notice,.toast,.exhibition-summary strong{font-size:14px}
+.kpi small,.subtext,.due,.money-legend,.chip,.avatar,.contact-rate,.report-controls label,.cruise-assignment>span,.cruise-checklist span,.exhibition-meta,.manual-import-note{font-size:13px}
+.person-name,.details dd,.source-top{font-size:15px}
+th{font-size:14px}
+td{font-size:15px}
+.icon-action,.row-action{font-size:14px}
+.status{font-size:13px}
+.cruise-profit span,.source-meta,.task-meta,.mini-label,.exhibition-summary small,.managed-note{font-size:13px}
+.form-grid label{font-size:14px}
+.form-grid input,.form-grid select,.form-grid textarea,.table-input,.filter-input,.filter-select{font-size:16px}
+.responsive-table td::before{font-size:13px}
+.focus-item-title{font-size:15px}
+.focus-item-meta,.focus-item-date{font-size:13px}
+.module-summary-title{font-size:16px}
+.module-summary-help{font-size:13px}
+.panel-actionbar>span,.panel-actionbar>div>span{font-size:14px}
+.quick-action-grid strong{font-size:15px}
+.quick-action-grid small{font-size:13px}
+.detail-kpi span{font-size:13px}
+.detail-kpi strong{font-size:18px}
+.entity-row-main strong{font-size:15px}
+.entity-row-main span{font-size:13px}
+.calendar-legend span,.calendar-day-number,.agenda-date,.agenda-main span{font-size:13px}
+.calendar-chip,.agenda-main strong{font-size:14px}
+.exhibition-link{font-size:13px}
+.exhibition-task-head strong,.exhibition-task-context strong{font-size:15px}
+.exhibition-task-head span,.exhibition-task-meta span,.exhibition-task-empty,.exhibition-task-context span{font-size:13px}
+.field-help{font-size:13px}
+.person-detail-rate span,.person-facts span{font-size:13px}
+.person-detail-rate strong,.person-facts strong{font-size:15px}
+.sensitive-person-note,.sensitive-inline-note{font-size:13px}
+.passenger-progress>span{font-size:13px}
+.primary-passenger-badge{font-size:11px!important}
+.passenger-readiness{font-size:13px}
+
+.passenger-client-row>td{background:#effaf4}
+.passenger-client-row:hover>td{background:#e2f6eb}
+.passenger-client-row .client-cell .avatar{background:#d8f2e3;color:#247a50}
+.passenger-list-badge{
+  display:inline-flex;
+  align-items:center;
+  margin-inline-start:7px;
+  padding:4px 9px;
+  border-radius:999px;
+  background:#d9f3e3;
+  color:#1f754b;
+  font-size:13px;
+  font-weight:800;
+  white-space:nowrap;
+}
+.cancelled-payment-row>td{opacity:.68}
+
+@media(max-width:620px){
+  h1{font-size:30px}
+  .responsive-table td{font-size:15px}
+  .responsive-table td::before{font-size:13px}
+  .btn{min-height:46px}
 }
