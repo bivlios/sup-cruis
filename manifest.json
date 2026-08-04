@@ -1,0 +1,17 @@
+{
+  "name": "SUP Cruise Business Manager",
+  "short_name": "SUP Cruise",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f3f8f8",
+  "theme_color": "#123c52",
+  "description": "Shared SUP Cruise business workspace",
+  "icons": [
+    {
+      "src": "assets/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

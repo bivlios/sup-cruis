@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SUPCruise Manager</title>
+  <meta name="theme-color" content="#123c52">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/app-icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -13,16 +20,15 @@
 <body>
   <section class="auth-gate" id="authGate" hidden>
     <div class="auth-card">
-      <img src="assets/supcruise-logo.png" alt="SUP Cruise">
-      <p class="eyebrow">SUP Cruise</p>
-      <h1>Sign in</h1>
-      <p>Sign in to access the shared business workspace.</p>
+      <div class="auth-brand"><span class="auth-brand-mark">⌁</span><div><strong>SUP Cruise</strong><small>Business manager</small></div></div>
+      <div class="auth-intro"><p class="eyebrow">PRIVATE WORKSPACE</p><h1>Welcome back</h1><p>Sign in to open your shared business workspace.</p></div>
       <form id="authForm">
-        <label>Email<input id="authEmail" type="email" autocomplete="email" required></label>
-        <label>Password<input id="authPassword" type="password" autocomplete="current-password" required></label>
-        <button class="btn primary" type="submit">Sign in</button>
+        <label>Email address<input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" required></label>
+        <label>Password<div class="password-field"><input id="authPassword" type="password" autocomplete="current-password" placeholder="Enter your password" required><button id="togglePassword" type="button" aria-label="Show password">Show</button></div></label>
+        <button class="btn primary auth-submit" type="submit">Sign in <span aria-hidden="true">→</span></button>
         <p class="auth-message" id="authMessage" role="alert"></p>
       </form>
+      <p class="auth-footnote">Your business data is stored securely in the shared cloud workspace.</p>
     </div>
   </section>
   <div class="app-shell">

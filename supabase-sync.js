@@ -2,7 +2,7 @@
   const config=window.SUPABASE_CONFIG;
   if(!config||!window.supabase){return}
   const client=window.supabase.createClient(config.url,config.publishableKey);
-  const gate=document.querySelector('#authGate'),shell=document.querySelector('.app-shell'),form=document.querySelector('#authForm'),message=document.querySelector('#authMessage'),signOut=document.querySelector('#signOutButton');
+  const gate=document.querySelector('#authGate'),shell=document.querySelector('.app-shell'),form=document.querySelector('#authForm'),message=document.querySelector('#authMessage'),signOut=document.querySelector('#signOutButton'),password=document.querySelector('#authPassword'),togglePassword=document.querySelector('#togglePassword');
   let currentUser=null,saveTimer=null,originalSaveState=window.saveState;
   const setMessage=value=>{if(message)message.textContent=value||''};
   const showGate=()=>{gate.hidden=false;shell.hidden=true};
@@ -11,6 +11,7 @@
   const uploadState=async()=>{if(!currentUser)return;const {error}=await client.from('workspace_state').upsert({user_id:currentUser.id,state,updated_at:new Date().toISOString()},{onConflict:'user_id'});if(error)throw error};
   const scheduleUpload=()=>{clearTimeout(saveTimer);saveTimer=setTimeout(()=>uploadState().catch(error=>setMessage(error.message)),500)};
   window.saveState=function(){originalSaveState();scheduleUpload()};
+  togglePassword?.addEventListener('click',()=>{const visible=password.type==='text';password.type=visible?'password':'text';togglePassword.textContent=visible?'Show':'Hide';togglePassword.setAttribute('aria-label',visible?'Show password':'Hide password')});
   async function openWorkspace(user){
     currentUser=user;
     try{
