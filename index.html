@@ -11,6 +11,20 @@
   <link rel="stylesheet" href="enhancements.css?v=20260810">
 </head>
 <body>
+  <section class="auth-gate" id="authGate" hidden>
+    <div class="auth-card">
+      <img src="assets/supcruise-logo.png" alt="SUP Cruise">
+      <p class="eyebrow">SUP Cruise</p>
+      <h1>Sign in</h1>
+      <p>Sign in to access the shared business workspace.</p>
+      <form id="authForm">
+        <label>Email<input id="authEmail" type="email" autocomplete="email" required></label>
+        <label>Password<input id="authPassword" type="password" autocomplete="current-password" required></label>
+        <button class="btn primary" type="submit">Sign in</button>
+        <p class="auth-message" id="authMessage" role="alert"></p>
+      </form>
+    </div>
+  </section>
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
 <div class="brand"><img class="brand-logo" data-supcruise-image="logo" src="assets/supcruise-logo.png?v=20260812" alt="SUP Cruise"><span class="brand-caption">Business manager</span><button class="menu-close" id="menuClose" aria-label="Close menu">×</button></div>
@@ -39,7 +53,7 @@
     <main class="main">
       <header class="topbar">
         <div class="title-group"><button class="menu-toggle" id="menuToggle" aria-label="Open menu">☰</button><div><p class="eyebrow" id="todayLabel"></p><h1 id="pageTitle">Business overview</h1></div></div>
-        <div class="header-actions"><div class="language-control"><button class="btn language-toggle" id="languageToggle" type="button" aria-label="Switch language">עברית</button></div><div class="context-actions"><button class="reminder-button" id="reminderButton" type="button" aria-label="Open reminders"><span aria-hidden="true">🔔</span><b id="reminderBadge" hidden>0</b></button><button class="btn primary" id="quickAddButton" type="button">＋ Add</button><button class="btn secondary legacy-quick" id="quickExpense">＋ Expense</button><button class="btn primary legacy-quick" id="quickClient">＋ Client</button></div></div>
+        <div class="header-actions"><div class="language-control"><button class="btn language-toggle" id="languageToggle" type="button" aria-label="Switch language">עברית</button></div><div class="context-actions"><button class="reminder-button" id="reminderButton" type="button" aria-label="Open reminders"><span aria-hidden="true">🔔</span><b id="reminderBadge" hidden>0</b></button><button class="btn primary" id="quickAddButton" type="button">＋ Add</button><button class="btn secondary legacy-quick" id="quickExpense">＋ Expense</button><button class="btn primary legacy-quick" id="quickClient">＋ Client</button><button class="btn secondary" id="signOutButton" type="button">Sign out</button></div></div>
       </header>
       <div class="demo-banner" id="demoBanner"><div><strong>Demo workspace</strong><span>These are sample records for testing. Start with an empty workspace before entering real business information.</span></div><button class="btn secondary" id="startEmptyButton" type="button">Start from the beginning</button></div>
 
@@ -192,7 +206,10 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="image-assets.js?v=20260812"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js?v=1"></script>
   <script src="app.js?v=20260811"></script>
   <script src="enhancements.js?v=20260809"></script>
+  <script src="supabase-sync.js?v=1"></script>
 </body>
 </html>
