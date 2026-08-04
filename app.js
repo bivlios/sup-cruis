@@ -61,7 +61,7 @@ Object.assign(HE,{
 Object.assign(HE,{
   'Demo workspace':'סביבת הדגמה',
   'These are sample records for testing. Start with an empty workspace before entering real business information.':'אלו רשומות לדוגמה לצורך בדיקה. לפני הזנת מידע עסקי אמיתי, התחילו עם סביבת עבודה ריקה.',
-  'Start empty workspace':'התחלה עם סביבת עבודה ריקה',
+  'Start empty workspace':'התחלה עם סביבת עבודה ריקה','Start from the beginning':'התחלה מחדש',
   'Dashboard period':'תקופת לוח הבקרה',
   'Financial totals and the cruise chart':'הסכומים הכספיים ותרשים ההפלגות',
   'Marketing period':'תקופת השיווק',
@@ -682,7 +682,7 @@ document.querySelectorAll('[data-client-filter]').forEach(b=>b.addEventListener(
 document.querySelectorAll('.modal-backdrop').forEach(m=>m.addEventListener('click',e=>{if(e.target===m&&m.classList.contains('modal-top'))closeModal(m.id)}));document.addEventListener('keydown',e=>{if(e.key==='Escape')closeTopModal()});
 document.querySelector('#menuToggle').onclick=()=>{document.querySelector('#sidebar').classList.add('open');document.querySelector('#menuScrim').classList.add('open')};document.querySelector('#menuClose').onclick=document.querySelector('#menuScrim').onclick=()=>{document.querySelector('#sidebar').classList.remove('open');document.querySelector('#menuScrim').classList.remove('open')};
 document.querySelector('#quickClient').onclick=()=>prepareClient();document.querySelector('#recordPaymentButton').onclick=()=>preparePayment();document.querySelector('#quickExpense').onclick=document.querySelector('#addExpenseButton').onclick=()=>prepareExpense();document.querySelector('#recordOutgoingPaymentButton').onclick=preparePaidExpense;document.querySelector('#addCruiseButton').onclick=()=>prepareCruise();document.querySelector('#addGuestButton').onclick=()=>prepareGuest();document.querySelector('#addPersonButton').onclick=()=>preparePerson();document.querySelector('#addMarketingTaskButton').onclick=()=>{const f=document.querySelector('#taskForm');f.reset();f.elements.date.value=TODAY;openModal('taskModal')};document.querySelector('#exportReportButton').onclick=exportReport;document.querySelector('#backupButton').onclick=backup;
-document.querySelector('#startEmptyButton').onclick=()=>startEmptyWorkspace().catch(error=>showToast(error.message));
+document.querySelector('#startEmptyButton').onclick=()=>startEmptyWorkspace().catch(error=>showToast(error.message));document.querySelector('#startOverButton').onclick=()=>startEmptyWorkspace().catch(error=>showToast(error.message));
 document.querySelector('#addExhibitionButton').onclick=()=>prepareExhibition();document.querySelector('#addMarketingExpenseButton').onclick=prepareMarketingExpense;
 document.querySelector('#addPartnerButton').onclick=()=>preparePartner();
 document.querySelector('#addInstallmentButton').onclick=()=>prepareInstallment();
