@@ -8,9 +8,9 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="assets/app-icon.svg">
+  <link rel="manifest" href="manifest.json?v=2">
+  <link rel="icon" href="assets/app-icon.svg?v=2" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/app-icon.svg?v=2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -23,10 +23,16 @@
       <div class="auth-brand"><span class="auth-brand-mark">⌁</span><div><strong>SUP Cruise</strong><small>Business manager</small></div></div>
       <div class="auth-intro"><p class="eyebrow">PRIVATE WORKSPACE</p><h1>Welcome back</h1><p>Sign in to open your shared business workspace.</p></div>
       <form id="authForm">
-        <label>Email address<input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" required></label>
-        <label>Password<div class="password-field"><input id="authPassword" type="password" autocomplete="current-password" placeholder="Enter your password" required><button id="togglePassword" type="button" aria-label="Show password">Show</button></div></label>
+        <label>Email address<input id="authEmail" type="email" inputmode="email" autocapitalize="none" spellcheck="false" autocomplete="email" placeholder="you@example.com" required></label>
+        <label>Password<div class="password-field"><input id="authPassword" type="password" inputmode="text" autocapitalize="none" spellcheck="false" autocomplete="current-password" placeholder="Enter your password" required><button id="togglePassword" type="button" aria-label="Show password">Show</button></div></label>
         <button class="btn primary auth-submit" type="submit">Sign in <span aria-hidden="true">→</span></button>
         <p class="auth-message" id="authMessage" role="alert"></p>
+      </form>
+      <button class="auth-link" id="forgotPasswordButton" type="button">Forgot password?</button>
+      <form id="resetPasswordForm" hidden>
+        <label>New password<input id="newPassword" type="password" autocomplete="new-password" minlength="8" required></label>
+        <label>Confirm new password<input id="confirmPassword" type="password" autocomplete="new-password" minlength="8" required></label>
+        <button class="btn primary auth-submit" type="submit">Save new password</button>
       </form>
       <p class="auth-footnote">Your business data is stored securely in the shared cloud workspace.</p>
     </div>
