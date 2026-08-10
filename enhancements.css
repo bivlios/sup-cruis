@@ -1087,3 +1087,13 @@ td{font-size:15px}
   .responsive-table td::before{font-size:13px}
   .btn{min-height:46px}
 }
+
+/* Account currently signed in, shown beside Sign out so it is obvious who is logged in. */
+.current-user{font-size:11px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;align-self:center}
+
+/* The show/hide toggle was absolutely positioned on top of the input, covering the end of the
+   field and swallowing taps meant for it - worse in Hebrew, where typing starts at that edge.
+   Lay it out beside the input instead so it can never overlap, in either text direction. */
+.password-field{position:static;display:flex;align-items:stretch;gap:8px}
+.password-field input{flex:1 1 auto;min-width:0;width:auto;padding-right:12px;padding-left:12px}
+.password-field button{position:static;top:auto;right:auto;flex:0 0 auto;width:auto;margin-top:0;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#278d7c;font-size:11px;font-weight:700;white-space:nowrap}

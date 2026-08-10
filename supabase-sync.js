@@ -2,6 +2,8 @@
   const config=window.SUPABASE_CONFIG;
   const gate=document.querySelector('#authGate'),shell=document.querySelector('.app-shell'),card=document.querySelector('.auth-card'),form=document.querySelector('#authForm'),message=document.querySelector('#authMessage'),signOut=document.querySelector('#signOutButton'),password=document.querySelector('#authPassword'),togglePassword=document.querySelector('#togglePassword'),email=document.querySelector('#authEmail'),forgot=document.querySelector('#forgotPasswordButton'),resetForm=document.querySelector('#resetPasswordForm'),newPassword=document.querySelector('#newPassword'),confirmPassword=document.querySelector('#confirmPassword');
   const setMessage=value=>{if(message)message.textContent=value||''};
+  const whoami=document.querySelector('#currentUserEmail');
+  const setWhoami=value=>{if(whoami)whoami.textContent=value||''};
   const showGate=()=>{gate.hidden=false;shell.hidden=true};
   const showShell=()=>{gate.hidden=true;shell.hidden=false};
   if(!config||!window.supabase){
@@ -151,6 +153,7 @@
       state=row.state;normalizeRestoredState();lastSyncedAt=row.updated_at;
       workspaceMode='live';localStorage.setItem(WORKSPACE_MODE_KEY,workspaceMode);
       try{originalSaveState()}catch(error){/* keep going: the cloud copy is the authority */}
+      setWhoami(user.email);
       render();
       showShell();
       if(workspaceWarning){showToast(workspaceWarning);workspaceWarning=''}
@@ -158,7 +161,7 @@
   }
   form?.addEventListener('submit',async event=>{event.preventDefault();setMessage('Signing in…');const {data,error}=await client.auth.signInWithPassword({email:document.querySelector('#authEmail').value.trim(),password:document.querySelector('#authPassword').value});if(error){setMessage(error.message);return}await openWorkspace(data.user)});
   signOut?.addEventListener('click',()=>client.auth.signOut());
-  client.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){form.hidden=true;forgot.hidden=true;resetForm.hidden=false;setMessage('Choose a new password.');showGate();return}if(session?.user)openWorkspace(session.user);else{currentUser=null;workspaceId=null;lastSyncedAt=null;showGate()}});
+  client.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){form.hidden=true;forgot.hidden=true;resetForm.hidden=false;setMessage('Choose a new password.');showGate();return}if(session?.user)openWorkspace(session.user);else{currentUser=null;workspaceId=null;lastSyncedAt=null;setWhoami('');showGate()}});
   // .catch matters: without it a rejected session lookup (offline, DNS blocked) leaves both the
   // gate and the shell hidden, i.e. a blank page with no way forward.
   // Supabase reports link failures (expired, already used, redirect not allow-listed) in the URL,
