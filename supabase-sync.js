@@ -29,14 +29,25 @@
   // Show nothing until we know whose workspace this is. Without this the shell renders local/demo
   // data for a moment on every load, and an edit made in that window would upload a stale blob.
   shell.hidden=true;
-  let currentUser=null,workspaceId=null,saveTimer=null,pendingSave=false,lastSyncedAt=null,originalSaveState=window.saveState;
+  let currentUser=null,workspaceId=null,workspaceWarning='',saveTimer=null,pendingSave=false,lastSyncedAt=null,originalSaveState=window.saveState;
   const LOCAL_BACKUP_KEY='supcruise-pre-sync-backup',REMOTE_BACKUP_KEY='supcruise-replaced-remote-backup';
   // Which workspace does this account belong to? A member of someone else's workspace shares
   // their data; an account with no membership gets one created for it.
   const resolveWorkspace=async()=>{
-    const {data,error}=await client.from('workspace_members').select('workspace_id').limit(1).maybeSingle();
+    // Deterministic ordering matters: an account that belongs to two workspaces must land in the
+    // SAME one every time. Picking arbitrarily is how records appear to vanish - they were written
+    // to the other workspace. Belonging to more than one is a setup mistake, so say so out loud.
+    const {data,error}=await client.from('workspace_members').select('workspace_id,role,created_at')
+      .order('created_at',{ascending:true}).order('workspace_id',{ascending:true});
     if(error)throw error;
-    if(data?.workspace_id)return data.workspace_id;
+    if(data&&data.length){
+      if(data.length>1){
+        workspaceWarning='This login belongs to more than one workspace, so some records may look missing. Tell Igal.';
+        console.warn('[SUPCruise] account is in multiple workspaces, using the oldest:',data);
+      }
+      console.info('[SUPCruise] workspace',data[0].workspace_id,`(${data[0].role})`);
+      return data[0].workspace_id;
+    }
     const created=await client.rpc('create_my_workspace');
     if(created.error)throw created.error;
     return created.data;
@@ -142,6 +153,7 @@
       try{originalSaveState()}catch(error){/* keep going: the cloud copy is the authority */}
       render();
       showShell();
+      if(workspaceWarning){showToast(workspaceWarning);workspaceWarning=''}
     }catch(error){setMessage(`Cannot open your workspace: ${error.message}`);showGate()}
   }
   form?.addEventListener('submit',async event=>{event.preventDefault();setMessage('Signing in…');const {data,error}=await client.auth.signInWithPassword({email:document.querySelector('#authEmail').value.trim(),password:document.querySelector('#authPassword').value});if(error){setMessage(error.message);return}await openWorkspace(data.user)});
