@@ -161,5 +161,25 @@
   client.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){form.hidden=true;forgot.hidden=true;resetForm.hidden=false;setMessage('Choose a new password.');showGate();return}if(session?.user)openWorkspace(session.user);else{currentUser=null;workspaceId=null;lastSyncedAt=null;showGate()}});
   // .catch matters: without it a rejected session lookup (offline, DNS blocked) leaves both the
   // gate and the shell hidden, i.e. a blank page with no way forward.
-  client.auth.getSession().then(({data,error})=>{if(error){setMessage(error.message);showGate()}else if(data.session)openWorkspace(data.session.user);else showGate()}).catch(error=>{setMessage(`Cannot reach the cloud workspace: ${error.message}`);showGate()});
+  // Supabase reports link failures (expired, already used, redirect not allow-listed) in the URL,
+  // not through an event. Without this the user just lands on the sign-in form with no explanation.
+  const urlParams=()=>{
+    const hash=new URLSearchParams(String(window.location.hash||'').replace(/^#/,''));
+    const query=new URLSearchParams(window.location.search);
+    return key=>hash.get(key)||query.get(key);
+  };
+  const linkError=urlParams()('error_description')||urlParams()('error');
+  const isRecoveryLink=urlParams()('type')==='recovery';
+  if(linkError){
+    setMessage(decodeURIComponent(String(linkError).replace(/\+/g,' ')));
+    showGate();
+  }
+  // A recovery link signs the user in, so without this getSession() would open the workspace and
+  // she would never be asked for a new password.
+  if(isRecoveryLink&&form&&resetForm&&forgot){
+    form.hidden=true;forgot.hidden=true;resetForm.hidden=false;
+    setMessage('Choose a new password.');
+    showGate();
+  }
+  client.auth.getSession().then(({data,error})=>{if(error){setMessage(error.message);showGate()}else if(data.session&&!isRecoveryLink)openWorkspace(data.session.user);else if(!isRecoveryLink&&!linkError)showGate()}).catch(error=>{setMessage(`Cannot reach the cloud workspace: ${error.message}`);showGate()});
 })();
