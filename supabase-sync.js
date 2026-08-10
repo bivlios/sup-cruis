@@ -30,21 +30,29 @@
   // data for a moment on every load, and an edit made in that window would upload a stale blob.
   shell.hidden=true;
   let currentUser=null,saveTimer=null,pendingSave=false,lastSyncedAt=null,originalSaveState=window.saveState;
-  const LOCAL_BACKUP_KEY='supcruise-pre-sync-backup';
+  const LOCAL_BACKUP_KEY='supcruise-pre-sync-backup',REMOTE_BACKUP_KEY='supcruise-replaced-remote-backup';
   const cloudRow=async user=>{const {data,error}=await client.from('workspace_state').select('state,updated_at').eq('user_id',user.id).maybeSingle();if(error)throw error;return data};
   // The whole workspace is one JSON blob, so an unconditional write is last-writer-wins: a device
   // holding a stale copy would silently erase records another device added. Guard the update with
-  // the updated_at we last read, so it only touches the row we actually know about. If another
-  // device wrote in the meantime it matches nothing, and we resolve instead of overwriting.
-  const uploadState=async()=>{
+  // the updated_at we last read, so it only touches the row we actually know about. On a mismatch
+  // we preserve the copy being replaced and retry once, so the user's own edit still lands - only
+  // a second consecutive mismatch falls through to resolveConflict.
+  const uploadState=async retrying=>{
     if(!currentUser)return;
     const stamp=new Date().toISOString();
     let query=client.from('workspace_state').update({state,updated_at:stamp}).eq('user_id',currentUser.id);
     if(lastSyncedAt)query=query.eq('updated_at',lastSyncedAt);
     const {data,error}=await query.select('updated_at');
     if(error)throw error;
-    if(!data||!data.length){await resolveConflict();return}
-    lastSyncedAt=data[0].updated_at;
+    if(data&&data.length){lastSyncedAt=data[0].updated_at;return}
+    // The guard matched nothing: another tab or device wrote since we last read. Do NOT discard
+    // the edit the user just made - that reads as "it did not save". Preserve the copy we are
+    // about to replace, take the current timestamp, and write our version once more.
+    if(retrying){await resolveConflict();return}
+    const row=await cloudRow(currentUser);
+    if(row?.state)try{localStorage.setItem(REMOTE_BACKUP_KEY,JSON.stringify({savedAt:new Date().toISOString(),data:row.state}))}catch(error){/* quota: the retry still preserves the user's own edit */}
+    lastSyncedAt=row?row.updated_at:null;
+    await uploadState(true);
   };
   // Another device wrote since we last read. Keep both: stash + back up this device's version,
   // then adopt the cloud copy so the two stop diverging, and say so out loud.
@@ -73,7 +81,7 @@
   // to read it, this conflicts (23505) and the caller re-reads, instead of silently overwriting it.
   const seedCloud=async payload=>{const {error}=await client.from('workspace_state').insert({user_id:currentUser.id,state:payload,updated_at:new Date().toISOString()});return error};
   const stashLocal=()=>{try{localStorage.setItem(LOCAL_BACKUP_KEY,JSON.stringify({savedAt:new Date().toISOString(),data:state}))}catch(error){/* quota or private mode: not worth blocking sign-in */}};
-  const scheduleUpload=()=>{pendingSave=true;clearTimeout(saveTimer);saveTimer=setTimeout(()=>{uploadState().then(()=>{pendingSave=false}).catch(error=>setMessage(error.message))},500)};
+  const scheduleUpload=()=>{pendingSave=true;clearTimeout(saveTimer);saveTimer=setTimeout(()=>{uploadState().then(()=>{pendingSave=false}).catch(error=>{pendingSave=true;showToast(`Not saved to the cloud: ${error.message}`)})},500)};
   window.saveState=function(){originalSaveState();scheduleUpload()};
   // Push any debounced edit out now. Mobile browsers freeze backgrounded tabs, so a pending
   // 500ms timer can otherwise never fire and the edit never leaves the device.
@@ -82,7 +90,7 @@
   // sign-in, so without this the page shows the snapshot it loaded with, forever.
   const refresh=async()=>{
     if(!currentUser||document.hidden)return;
-    if(pendingSave){clearTimeout(saveTimer);try{await uploadState();pendingSave=false}catch(error){setMessage(error.message)}return}
+    if(pendingSave){clearTimeout(saveTimer);try{await uploadState();pendingSave=false}catch(error){showToast(`Not saved to the cloud: ${error.message}`)}return}
     if(document.querySelector('.modal-backdrop.open'))return;
     try{
       const row=await cloudRow(currentUser);
