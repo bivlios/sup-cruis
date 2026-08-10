@@ -1034,7 +1034,7 @@
       const actions = card.querySelector('.cruise-actions');
       if (actions) {
         const cancelled = cruiseIsCancelled(cruise);
-        actions.innerHTML = `<button class="btn primary compact-btn" type="button" data-open-cruise="${cruise.id}">Open details</button><button class="icon-action" type="button" data-edit-cruise="${cruise.id}">Edit</button>${cancelled ? `<span class="status cancelled">${translatedText('Cancelled cruise')}</span>` : `<button class="icon-action danger" type="button" data-cancel-cruise="${cruise.id}">Cancel cruise</button>`}`;
+        actions.innerHTML = `<button class="btn primary compact-btn" type="button" data-open-cruise="${cruise.id}">Open details</button><button class="icon-action" type="button" data-edit-cruise="${cruise.id}">Edit</button>${cancelled ? `<span class="status cancelled">${translatedText('Cancelled cruise')}</span><button class="icon-action danger" type="button" data-remove-cruise="${cruise.id}">Remove cruise</button>` : `<button class="icon-action danger" type="button" data-cancel-cruise="${cruise.id}">Cancel cruise</button>`}`;
       }
     });
   };
@@ -1788,7 +1788,7 @@
     if (supplierSection) panelMap.crew.append(supplierSection);
     panelMap.expenses.append(expenseSection);
     detailBody.append(tabs, panels);
-    document.querySelector('#cruiseDetailActions').innerHTML = `<button class="btn primary" type="button" data-copy-cruise-report="${cruise.id}">Copy cruise report</button><button class="btn secondary" type="button" data-download-cruise-report="${cruise.id}">Download cruise report CSV</button><button class="btn secondary" type="button" data-edit-cruise="${cruise.id}">Edit cruise</button>${cruiseIsCancelled(cruise) ? `<span class="status cancelled">${translatedText('Cancelled cruise')}</span>` : `<button class="btn secondary danger" type="button" data-cancel-cruise="${cruise.id}">Cancel cruise</button>`}`;
+    document.querySelector('#cruiseDetailActions').innerHTML = `<button class="btn primary" type="button" data-copy-cruise-report="${cruise.id}">Copy cruise report</button><button class="btn secondary" type="button" data-download-cruise-report="${cruise.id}">Download cruise report CSV</button><button class="btn secondary" type="button" data-edit-cruise="${cruise.id}">Edit cruise</button>${cruiseIsCancelled(cruise) ? `<span class="status cancelled">${translatedText('Cancelled cruise')}</span><button class="btn secondary danger" type="button" data-remove-cruise="${cruise.id}">Remove cruise</button>` : `<button class="btn secondary danger" type="button" data-cancel-cruise="${cruise.id}">Cancel cruise</button>`}`;
     openModal('cruiseDetailModal');
     applyLanguage();
   }
