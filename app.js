@@ -521,7 +521,29 @@ renderReports=function(){
   if(type==='deadlines'){renderDeadlineReport();return}
   document.querySelector('#reportExpenseCategory').disabled=true;renderReportsWithAdjustments();
 };
-function render(){syncDerived();fillCruiseSelects();fillPartnerSelects();fillManagementFilters();updateDemoBanner();renderDashboard();renderClients();renderOperations();renderFinance();renderPeople();renderMarketing();renderPartners();renderReports();saveState();applyLanguage()}
+// Persist BEFORE drawing, and isolate each section. saveState used to run last, after the whole
+// render chain, so a failure in any one section meant the user's change was never written to the
+// device or uploaded - while the part that had already drawn made it look saved.
+function renderStep(failed,label,fn){try{fn()}catch(error){failed.push(label);console.error(`[SUPCruise] ${label} failed to render`,error)}}
+function render(){
+  const failed=[];
+  renderStep(failed,'derived data',syncDerived);
+  saveState();
+  renderStep(failed,'cruise selects',fillCruiseSelects);
+  renderStep(failed,'partner selects',fillPartnerSelects);
+  renderStep(failed,'filters',fillManagementFilters);
+  renderStep(failed,'demo banner',updateDemoBanner);
+  renderStep(failed,'dashboard',renderDashboard);
+  renderStep(failed,'clients',renderClients);
+  renderStep(failed,'cruises',renderOperations);
+  renderStep(failed,'finance',renderFinance);
+  renderStep(failed,'crew',renderPeople);
+  renderStep(failed,'marketing',renderMarketing);
+  renderStep(failed,'partners',renderPartners);
+  renderStep(failed,'reports',renderReports);
+  renderStep(failed,'language',applyLanguage);
+  if(failed.length)showToast(`Saved. Some sections could not be displayed: ${failed.join(', ')}`);
+}
 
 function resetForm(form){form.reset();form.elements.id&&(form.elements.id.value='')}
 function setForm(form,data){for(const [key,value] of Object.entries(data||{}))if(form.elements[key])form.elements[key].value=value??''}

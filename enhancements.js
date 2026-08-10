@@ -2109,18 +2109,24 @@
   };
 
   const baseRenderEnhancement = render;
+  // Persist before drawing, and isolate each section, for the same reason as the base render:
+  // a failure in one panel must never stop the user's change being saved and uploaded.
   render = function() {
-    normalizeEnhancementState();
-    baseRenderEnhancement();
-    renderFinancePanels();
-    renderCalendar();
-    renderReminderCenter();
-    if (document.querySelector('#clientDetailModal').classList.contains('open') && clientBy(currentClientDetailId)) prepareClientDetail(currentClientDetailId);
-    if (document.querySelector('#cruiseDetailModal').classList.contains('open') && cruiseBy(currentCruiseDetailId)) prepareCruiseDetail(currentCruiseDetailId);
-    if (document.querySelector('#personDetailModal').classList.contains('open') && state.people.some(person => Number(person.id) === Number(currentPersonDetailId))) preparePersonDetail(currentPersonDetailId);
+    const failed = [];
+    renderStep(failed, 'normalisation', normalizeEnhancementState);
     saveState();
-    roomCompatibility();
-    applyLanguage();
+    renderStep(failed, 'main sections', baseRenderEnhancement);
+    renderStep(failed, 'finance panels', renderFinancePanels);
+    renderStep(failed, 'calendar', renderCalendar);
+    renderStep(failed, 'reminders', renderReminderCenter);
+    renderStep(failed, 'open cards', () => {
+      if (document.querySelector('#clientDetailModal').classList.contains('open') && clientBy(currentClientDetailId)) prepareClientDetail(currentClientDetailId);
+      if (document.querySelector('#cruiseDetailModal').classList.contains('open') && cruiseBy(currentCruiseDetailId)) prepareCruiseDetail(currentCruiseDetailId);
+      if (document.querySelector('#personDetailModal').classList.contains('open') && state.people.some(person => Number(person.id) === Number(currentPersonDetailId))) preparePersonDetail(currentPersonDetailId);
+    });
+    renderStep(failed, 'room matching', roomCompatibility);
+    renderStep(failed, 'language', applyLanguage);
+    if (failed.length) showToast(`Saved. Some sections could not be displayed: ${failed.join(', ')}`);
   };
 
   function enhancedBackup() {
