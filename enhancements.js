@@ -1937,8 +1937,6 @@
     state.exhibitions.forEach(exhibition => (exhibition.tasks || []).filter(task => !task.done).forEach(task => add({id:`exhibitionTask:${exhibition.id}:${task.id}`,type:'Exhibition task',title:task.title,meta:exhibition.name,date:task.dueDate,view:'marketing',kind:'task'})));
     state.marketingTasks.filter(task => !task.done).forEach(task => add({id:`contentTask:${task.id}`,type:'Content task',title:task.title,meta:task.channel,date:task.date,view:'marketing',kind:'task'}));
     state.events.forEach(event => add({id:`event:${event.id}`,type:event.type || 'Event',title:event.title,meta:event.location || event.notes,date:event.date,view:'calendar',kind:'task'}));
-    const backupDueDate = weeklyBackupDueDate();
-    if (backupDueDate) add({id:'weeklyBackup',type:'Data backup',title:'Weekly data backup',meta:'Download a copy of the app data and keep it in a safe folder.',date:backupDueDate,view:'reports',kind:'backup'});
     return reminders.sort((a, b) => a.date.localeCompare(b.date));
   }
 
