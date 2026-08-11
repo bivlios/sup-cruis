@@ -2028,14 +2028,18 @@
       const day = new Date(start);
       day.setDate(start.getDate() + index);
       const iso = localISO(day);
-      const dayCruises = state.cruises.filter(cruise => cruise.startDate && (cruise.endDate || cruise.startDate) >= iso && cruise.startDate <= iso);
-      const cruiseRanges = dayCruises.map(cruise => {
-        const endDate = cruise.endDate || cruise.startDate;
-        const position = `${iso === cruise.startDate ? 'start' : ''} ${iso === endDate ? 'end' : ''}`.trim() || 'middle';
-        return `<button class="calendar-range cruise ${position}" type="button" data-calendar-kind="cruise" data-calendar-id="${esc(cruise.id)}" title="${esc(`${cruise.name} · ${formatDate(cruise.startDate)} – ${formatDate(endDate)}`)}"><span>${iso === cruise.startDate ? esc(cruise.name) : '&nbsp;'}</span></button>`;
+      const ranges = [
+        ...state.cruises.filter(item => item.startDate).map(item => ({kind:'cruise', id:item.id, startDate:item.startDate, endDate:item.endDate || item.startDate, title:item.name, meta:`${formatDate(item.startDate)} – ${formatDate(item.endDate || item.startDate)}`})),
+        ...state.exhibitions.filter(item => item.status !== 'Cancelled' && item.startDate).map(item => ({kind:'exhibition', id:item.id, startDate:item.startDate, endDate:item.endDate || item.startDate, title:item.name, meta:`${formatDate(item.startDate)} – ${formatDate(item.endDate || item.startDate)}`})),
+        ...state.events.filter(item => item.date && item.endDate && item.endDate >= item.date).map(item => ({kind:'event', id:item.id, startDate:item.date, endDate:item.endDate, title:item.title, meta:item.meta || [item.time,item.location].filter(Boolean).join(' · ')}))
+      ];
+      const dayRanges = ranges.filter(range => range.startDate <= iso && range.endDate >= iso);
+      const rangeMarkup = dayRanges.map(range => {
+        const position = `${iso === range.startDate ? 'start' : ''} ${iso === range.endDate ? 'end' : ''}`.trim() || 'middle';
+        return `<button class="calendar-range ${range.kind} ${position}" type="button" data-calendar-kind="${range.kind}" data-calendar-id="${esc(range.id)}" title="${esc(`${range.title} · ${formatDate(range.startDate)} – ${formatDate(range.endDate)}`)}"><span>${iso === range.startDate ? esc(range.title) : '&nbsp;'}</span></button>`;
       }).join('');
-      const dayItems = items.filter(item => item.date === iso && item.kind !== 'cruise');
-      html += `<div class="calendar-day ${day.getMonth() !== month ? 'outside' : ''} ${iso === TODAY ? 'today' : ''}"><div class="calendar-day-number">${day.getDate()}</div>${cruiseRanges ? `<div class="calendar-day-ranges">${cruiseRanges}</div>` : ''}<div class="calendar-day-items">${dayItems.slice(0, 3).map(item => `<button class="calendar-chip ${item.kind}" type="button" data-calendar-kind="${item.kind}" data-calendar-id="${esc(item.id)}" title="${esc(item.meta || item.title)}">${esc(item.title)}</button>`).join('')}${dayItems.length > 3 ? `<span class="calendar-more">＋${dayItems.length - 3} ${translatedText('More')}</span>` : ''}</div></div>`;
+      const dayItems = items.filter(item => item.date === iso && !ranges.some(range => range.kind === item.kind && String(range.id) === String(item.id)));
+      html += `<div class="calendar-day ${day.getMonth() !== month ? 'outside' : ''} ${iso === TODAY ? 'today' : ''}"><div class="calendar-day-number">${day.getDate()}</div>${rangeMarkup ? `<div class="calendar-day-ranges">${rangeMarkup}</div>` : ''}<div class="calendar-day-items">${dayItems.slice(0, 3).map(item => `<button class="calendar-chip ${item.kind}" type="button" data-calendar-kind="${item.kind}" data-calendar-id="${esc(item.id)}" title="${esc(item.meta || item.title)}">${esc(item.title)}</button>`).join('')}${dayItems.length > 3 ? `<span class="calendar-more">＋${dayItems.length - 3} ${translatedText('More')}</span>` : ''}</div></div>`;
     }
     document.querySelector('#calendarGrid').innerHTML = html;
     const monthStart = localISO(new Date(year, month, 1, 12));

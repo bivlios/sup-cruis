@@ -410,6 +410,8 @@ html[dir="rtl"] .selected-quote-row td:first-child{box-shadow:inset -4px 0 0 var
 .calendar-range.end{border-radius:0 6px 6px 0;margin-inline-end:4px;width:calc(100% - 4px)}
 .calendar-range.start.end{border-radius:6px;margin-inline:4px;width:calc(100% - 8px)}
 .calendar-range.middle{background:#d9f2f8}
+.calendar-range.exhibition{background:#e9e4ff;color:#6557b2}
+.calendar-range.event{background:#dff4e9;color:#267964}
 html[dir="rtl"] .calendar-range{text-align:right}
 .calendar-day-items{display:grid;gap:4px}
 .calendar-chip{
@@ -500,7 +502,7 @@ html[dir="rtl"] .calendar-chip{text-align:right}
   .module-section>summary{padding-block:15px}
   .subtabs{width:100%}
   .subtab{flex:1}
-  .calendar-grid{display:none}
+  .calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(96px,1fr));overflow-x:auto;-webkit-overflow-scrolling:touch}
   .calendar-agenda-card{margin-top:0}
   .calendar-nav{justify-content:space-between}
   .calendar-toolbar h2{text-align:center}
