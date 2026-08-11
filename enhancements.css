@@ -1095,8 +1095,7 @@ td{font-size:15px}
   .btn{min-height:46px}
 }
 
-/* Account currently signed in, shown beside Sign out so it is obvious who is logged in. */
-.current-user{font-size:11px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;align-self:center}
+/* Account currently signed in is shown inside the navigation menu. */
 .sidebar-account{display:grid;gap:4px;margin:-12px 8px 22px;padding:11px 12px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:rgba(255,255,255,.06);min-width:0}.sidebar-account span{color:#82aeb7;font-size:9px;letter-spacing:.08em;text-transform:uppercase}.sidebar-account strong{color:#fff;font-size:11px;font-weight:700;line-height:1.35;overflow-wrap:anywhere;word-break:break-word}
 
 /* The show/hide toggle was absolutely positioned on top of the input, covering the end of the
