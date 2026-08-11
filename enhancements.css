@@ -404,6 +404,13 @@ html[dir="rtl"] .selected-quote-row td:first-child{box-shadow:inset -4px 0 0 var
 .calendar-day.outside{background:#f8fbfc;color:#9db0b8}
 .calendar-day.today{background:#f2fbfe;box-shadow:inset 0 0 0 2px #8ddaf2}
 .calendar-day-number{font-size:11px;font-weight:700;margin-bottom:6px}
+.calendar-day-ranges{display:grid;gap:3px;margin:0 -8px 5px}
+.calendar-range{width:calc(100% + 1px);min-height:18px;padding:3px 6px;border:0;border-radius:0;background:#bfeaf6;color:#176d90;font-size:9px;font-weight:700;text-align:left;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer}
+.calendar-range.start{border-radius:6px 0 0 6px;margin-inline-start:4px;width:calc(100% - 4px)}
+.calendar-range.end{border-radius:0 6px 6px 0;margin-inline-end:4px;width:calc(100% - 4px)}
+.calendar-range.start.end{border-radius:6px;margin-inline:4px;width:calc(100% - 8px)}
+.calendar-range.middle{background:#d9f2f8}
+html[dir="rtl"] .calendar-range{text-align:right}
 .calendar-day-items{display:grid;gap:4px}
 .calendar-chip{
   width:100%;
@@ -1090,6 +1097,7 @@ td{font-size:15px}
 
 /* Account currently signed in, shown beside Sign out so it is obvious who is logged in. */
 .current-user{font-size:11px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;align-self:center}
+.sidebar-account{display:grid;gap:4px;margin:-12px 8px 22px;padding:11px 12px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:rgba(255,255,255,.06);min-width:0}.sidebar-account span{color:#82aeb7;font-size:9px;letter-spacing:.08em;text-transform:uppercase}.sidebar-account strong{color:#fff;font-size:11px;font-weight:700;line-height:1.35;overflow-wrap:anywhere;word-break:break-word}
 
 /* The show/hide toggle was absolutely positioned on top of the input, covering the end of the
    field and swallowing taps meant for it - worse in Hebrew, where typing starts at that edge.

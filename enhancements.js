@@ -2028,8 +2028,14 @@
       const day = new Date(start);
       day.setDate(start.getDate() + index);
       const iso = localISO(day);
-      const dayItems = items.filter(item => item.date === iso);
-      html += `<div class="calendar-day ${day.getMonth() !== month ? 'outside' : ''} ${iso === TODAY ? 'today' : ''}"><div class="calendar-day-number">${day.getDate()}</div><div class="calendar-day-items">${dayItems.slice(0, 3).map(item => `<button class="calendar-chip ${item.kind}" type="button" data-calendar-kind="${item.kind}" data-calendar-id="${esc(item.id)}" title="${esc(item.meta || item.title)}">${esc(item.title)}</button>`).join('')}${dayItems.length > 3 ? `<span class="calendar-more">＋${dayItems.length - 3} ${translatedText('More')}</span>` : ''}</div></div>`;
+      const dayCruises = state.cruises.filter(cruise => cruise.startDate && (cruise.endDate || cruise.startDate) >= iso && cruise.startDate <= iso);
+      const cruiseRanges = dayCruises.map(cruise => {
+        const endDate = cruise.endDate || cruise.startDate;
+        const position = `${iso === cruise.startDate ? 'start' : ''} ${iso === endDate ? 'end' : ''}`.trim() || 'middle';
+        return `<button class="calendar-range cruise ${position}" type="button" data-calendar-kind="cruise" data-calendar-id="${esc(cruise.id)}" title="${esc(`${cruise.name} · ${formatDate(cruise.startDate)} – ${formatDate(endDate)}`)}"><span>${iso === cruise.startDate ? esc(cruise.name) : '&nbsp;'}</span></button>`;
+      }).join('');
+      const dayItems = items.filter(item => item.date === iso && item.kind !== 'cruise');
+      html += `<div class="calendar-day ${day.getMonth() !== month ? 'outside' : ''} ${iso === TODAY ? 'today' : ''}"><div class="calendar-day-number">${day.getDate()}</div>${cruiseRanges ? `<div class="calendar-day-ranges">${cruiseRanges}</div>` : ''}<div class="calendar-day-items">${dayItems.slice(0, 3).map(item => `<button class="calendar-chip ${item.kind}" type="button" data-calendar-kind="${item.kind}" data-calendar-id="${esc(item.id)}" title="${esc(item.meta || item.title)}">${esc(item.title)}</button>`).join('')}${dayItems.length > 3 ? `<span class="calendar-more">＋${dayItems.length - 3} ${translatedText('More')}</span>` : ''}</div></div>`;
     }
     document.querySelector('#calendarGrid').innerHTML = html;
     const monthStart = localISO(new Date(year, month, 1, 12));

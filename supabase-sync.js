@@ -2,8 +2,8 @@
   const config=window.SUPABASE_CONFIG;
   const gate=document.querySelector('#authGate'),shell=document.querySelector('.app-shell'),card=document.querySelector('.auth-card'),form=document.querySelector('#authForm'),message=document.querySelector('#authMessage'),signOut=document.querySelector('#signOutButton'),password=document.querySelector('#authPassword'),togglePassword=document.querySelector('#togglePassword'),email=document.querySelector('#authEmail'),forgot=document.querySelector('#forgotPasswordButton'),resetForm=document.querySelector('#resetPasswordForm'),newPassword=document.querySelector('#newPassword'),confirmPassword=document.querySelector('#confirmPassword');
   const setMessage=value=>{if(message)message.textContent=value||''};
-  const whoami=document.querySelector('#currentUserEmail');
-  const setWhoami=value=>{if(whoami)whoami.textContent=value||''};
+  const whoami=document.querySelector('#currentUserEmail'),sidebarWhoami=document.querySelector('#sidebarUserEmail');
+  const setWhoami=value=>{if(whoami)whoami.textContent=value||'';if(sidebarWhoami)sidebarWhoami.textContent=value||'—'};
   const showGate=()=>{gate.hidden=false;shell.hidden=true};
   const showShell=()=>{gate.hidden=true;shell.hidden=false};
   if(!config||!window.supabase){
