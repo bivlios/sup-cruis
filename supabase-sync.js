@@ -77,21 +77,46 @@
     lastSyncedAt=row?row.updated_at:null;
     await uploadState(true);
   };
-  // Another device wrote since we last read. Keep both: stash + back up this device's version,
-  // then adopt the cloud copy so the two stop diverging, and say so out loud.
+  // Another device wrote since we last read. Keep both: stash this device's version where the
+  // recovery button can reach it, then adopt the cloud copy so the two stop diverging, and say so
+  // out loud. Deliberately does not download a file - see showStashRecovery.
   const resolveConflict=async()=>{
     stashLocal();
-    try{backup()}catch(error){/* download blocked: the localStorage stash still holds it */}
     const row=await cloudRow();
     if(row?.state){
       state=row.state;normalizeRestoredState();lastSyncedAt=row.updated_at;
       try{originalSaveState()}catch(error){/* keep going: the cloud copy is the authority */}
       render();
     }
-    showToast('This workspace changed on another device. Your recent edits were saved to a backup file');
+    showToast('This workspace changed on another device. Your recent edits were kept — use "Download unsynced copy" in Reports to save them');
   };
   const hasRecords=value=>!!value&&Object.keys(seed).some(key=>Array.isArray(value[key])&&value[key].length);
-  const sameData=(a,b)=>{try{return JSON.stringify(a)===JSON.stringify(b)}catch(error){return false}};
+  // Key order must NOT count as a difference. `workspace_state.state` is a jsonb column and Postgres
+  // stores jsonb keys in its own canonical order, so a blob never round-trips in the order we sent
+  // it. Worse, normalizeRestoredState appends any missing field to the end of each record, so the
+  // local copy is reordered again on top of that. Plain JSON.stringify therefore reported "this
+  // device holds unsynced work" on every single load, when the two copies were in fact identical.
+  const canonicalJson=value=>{
+    if(Array.isArray(value))return `[${value.map(canonicalJson).join(',')}]`;
+    // Drop undefined-valued keys the way JSON.stringify does, so an in-memory field that never
+    // survives the trip to Postgres does not read as a difference against the copy that came back.
+    if(value&&typeof value==='object')return `{${Object.keys(value).filter(key=>value[key]!==undefined).sort().map(key=>`${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
+    return value===undefined?'null':JSON.stringify(value);
+  };
+  const sameData=(a,b)=>{try{return canonicalJson(a)===canonicalJson(b)}catch(error){return false}};
+  // Sorting keys is not enough on its own. At the end of every load we normalise the cloud copy and
+  // write THAT to localStorage, without uploading it - so the local copy legitimately carries default
+  // fields (person.dob:'', exhibition.tasks:[], ...) that the cloud row does not, until the next edit
+  // pushes them. Comparing raw local against raw cloud would read those defaults as "records the
+  // cloud does not have" on every load. Normalise a throwaway clone of the cloud copy first so both
+  // sides have been through the same treatment. normalizeRestoredState works on the global `state`,
+  // hence the swap; the returned reference is the clone, so restoring `state` in finally is safe.
+  const normalizedClone=value=>{
+    const previous=state;
+    try{state=JSON.parse(JSON.stringify(value));normalizeRestoredState();return state}
+    catch(error){return value}
+    finally{state=previous}
+  };
   // Real work = this device has actually persisted something. saveState writes STORAGE_KEY on every
   // edit, so its absence means nothing was ever entered here and the demo fixture on screen is
   // disposable. This deliberately does NOT look at workspaceMode: typing over the demo without
@@ -103,7 +128,39 @@
   // Seed a brand-new account with insert, never upsert: if a row does exist and we simply failed
   // to read it, this conflicts (23505) and the caller re-reads, instead of silently overwriting it.
   const seedCloud=async payload=>{const {error}=await client.from('workspace_state').insert({user_id:currentUser.id,workspace_id:workspaceId,state:payload,updated_at:new Date().toISOString()});return error};
-  const stashLocal=()=>{try{localStorage.setItem(LOCAL_BACKUP_KEY,JSON.stringify({savedAt:new Date().toISOString(),data:state}))}catch(error){/* quota or private mode: not worth blocking sign-in */}};
+  const stashLocal=()=>{try{localStorage.setItem(LOCAL_BACKUP_KEY,JSON.stringify({savedAt:new Date().toISOString(),data:state}))}catch(error){/* quota or private mode: not worth blocking sign-in */}showStashRecovery()};
+  // The stash used to be paired with an automatic backup() download, which meant the browser saved a
+  // JSON file without being asked - on every load, because of the sameData bug above. The stash is
+  // now the only copy, so it needs a way out: a button that appears in the Reports backup panel only
+  // while an unrecovered stash exists. Downloading it produces the same shape restore() reads back.
+  const readStash=()=>{try{const parsed=JSON.parse(localStorage.getItem(LOCAL_BACKUP_KEY));return parsed?.data?parsed:null}catch(error){return null}};
+  function showStashRecovery(){
+    const panel=document.querySelector('.backup-actions');
+    if(!panel)return;
+    const stash=readStash();
+    let button=document.querySelector('#downloadUnsyncedCopy');
+    if(!stash){button?.remove();return}
+    if(!button){
+      button=document.createElement('button');
+      button.id='downloadUnsyncedCopy';
+      button.type='button';
+      button.className='btn secondary';
+      button.addEventListener('click',()=>{
+        const pending=readStash();
+        if(!pending){showStashRecovery();return}
+        downloadBlob(new Blob([JSON.stringify({version:5,exportedAt:pending.savedAt,data:pending.data},null,2)],{type:'application/json'}),`supcruise-unsynced-${String(pending.savedAt).slice(0,10)}.json`);
+        try{localStorage.removeItem(LOCAL_BACKUP_KEY)}catch(error){/* the file is already downloaded */}
+        showStashRecovery();
+        showToast('Unsynced copy downloaded. Use "Restore from backup" if you need those records back');
+      });
+      panel.append(button);
+    }
+    // The label has to stay a fixed phrase so the HE dictionary can match it; the date goes in the
+    // tooltip rather than into the text.
+    button.textContent='↓ Download unsynced copy';
+    button.title=`Kept on ${String(stash.savedAt).slice(0,10)}`;
+    applyLanguage();
+  }
   const scheduleUpload=()=>{pendingSave=true;clearTimeout(saveTimer);saveTimer=setTimeout(()=>{uploadState().then(()=>{pendingSave=false}).catch(error=>{pendingSave=true;showToast(`Not saved to the cloud: ${error.message}`)})},500)};
   window.saveState=function(){originalSaveState();scheduleUpload()};
   // Push any debounced edit out now. Mobile browsers freeze backgrounded tabs, so a pending
@@ -130,7 +187,18 @@
   [email,password].forEach(input=>input?.addEventListener('pointerdown',()=>input.focus(),{passive:true}));
   forgot?.addEventListener('click',async()=>{const address=email.value.trim();if(!address){setMessage('Enter your email address first.');email.focus();return}setMessage('Sending a password reset email…');const {error}=await client.auth.resetPasswordForEmail(address,{redirectTo:window.location.origin});setMessage(error?error.message:'Check your email for a password reset link.')});
   resetForm?.addEventListener('submit',async event=>{event.preventDefault();if(newPassword.value!==confirmPassword.value){setMessage('The passwords do not match.');return}setMessage('Saving your new password…');const {error}=await client.auth.updateUser({password:newPassword.value});if(error){setMessage(error.message);return}resetForm.hidden=true;form.hidden=false;forgot.hidden=false;setMessage('Password updated. You can continue using the app.')});
-  async function openWorkspace(user){
+  // getSession() and onAuthStateChange BOTH report the same session at start-up: supabase-js v2
+  // emits INITIAL_SESSION as soon as the listener subscribes, then SIGNED_IN, then TOKEN_REFRESHED
+  // on focus and roughly hourly. Each one used to re-run the whole open sequence - re-reading the
+  // row, re-rendering, and (with the sameData bug) downloading another backup file. Open a given
+  // user's workspace once, and serialise the calls so a sign-out/sign-in cannot interleave.
+  let openedUserId=null,openInFlight=null;
+  function openWorkspace(user){
+    if(!user)return Promise.resolve();
+    openInFlight=(openInFlight||Promise.resolve()).catch(()=>{}).then(()=>openedUserId===user.id?undefined:runOpenWorkspace(user));
+    return openInFlight;
+  }
+  async function runOpenWorkspace(user){
     currentUser=user;
     try{
       workspaceId=await resolveWorkspace();
@@ -144,11 +212,12 @@
         row=await cloudRow();
         if(!row?.state)throw new Error('the cloud workspace could not be created. Reload the page and try again.');
       }
-      // The cloud copy wins from here. If this device held work that never reached the cloud, save
-      // it off first: a stash in localStorage plus a backup file the Restore button can read back.
-      if(hasRealWork()&&!sameData(state,row.state)){
+      // The cloud copy wins from here. If this device held work that never reached the cloud, stash
+      // it first so the recovery button can hand it back. sameData must be order-insensitive or this
+      // fires on every load - see canonicalJson.
+      if(hasRealWork()&&!sameData(state,normalizedClone(row.state))){
         stashLocal();
-        try{backup();showToast('Unsynced records on this device were saved to a backup file')}catch(error){/* download blocked: the localStorage stash still holds it */}
+        showToast('This device held records the cloud did not have. They were kept — use "Download unsynced copy" in Reports to save them');
       }
       state=row.state;normalizeRestoredState();lastSyncedAt=row.updated_at;
       workspaceMode='live';localStorage.setItem(WORKSPACE_MODE_KEY,workspaceMode);
@@ -156,12 +225,14 @@
       setWhoami(user.email);
       render();
       showShell();
+      showStashRecovery();
+      openedUserId=user.id;
       if(workspaceWarning){showToast(workspaceWarning);workspaceWarning=''}
-    }catch(error){setMessage(`Cannot open your workspace: ${error.message}`);showGate()}
+    }catch(error){openedUserId=null;setMessage(`Cannot open your workspace: ${error.message}`);showGate()}
   }
   form?.addEventListener('submit',async event=>{event.preventDefault();setMessage('Signing in…');const {data,error}=await client.auth.signInWithPassword({email:document.querySelector('#authEmail').value.trim(),password:document.querySelector('#authPassword').value});if(error){setMessage(error.message);return}await openWorkspace(data.user)});
   signOut?.addEventListener('click',()=>client.auth.signOut());
-  client.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){form.hidden=true;forgot.hidden=true;resetForm.hidden=false;setMessage('Choose a new password.');showGate();return}if(session?.user)openWorkspace(session.user);else{currentUser=null;workspaceId=null;lastSyncedAt=null;setWhoami('');showGate()}});
+  client.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){form.hidden=true;forgot.hidden=true;resetForm.hidden=false;setMessage('Choose a new password.');showGate();return}if(session?.user)openWorkspace(session.user);else{currentUser=null;workspaceId=null;lastSyncedAt=null;openedUserId=null;setWhoami('');showGate()}});
   // .catch matters: without it a rejected session lookup (offline, DNS blocked) leaves both the
   // gate and the shell hidden, i.e. a blank page with no way forward.
   // Supabase reports link failures (expired, already used, redirect not allow-listed) in the URL,

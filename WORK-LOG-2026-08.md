@@ -96,6 +96,45 @@ render and the `enhancements.js` override.
 Verified by deliberately breaking a renderer: data still saved, other sections
 still drew, user was told which section failed.
 
+### 7. A backup JSON downloaded itself on every load, several times over
+Reported as "the JSON downloads many times when loading the app". Two independent
+bugs stacked:
+
+**`sameData` compared key order.** It used `JSON.stringify(a)===JSON.stringify(b)`
+to decide whether this device held work the cloud lacked. But `workspace_state.state`
+is a **jsonb** column, and Postgres stores jsonb keys in its own canonical order —
+a blob never comes back in the order it was sent. `normalizeRestoredState` then
+appends any missing field to the end of each record, reordering the local copy
+again. So the check reported "unsynced records" on **every load**, for data that
+was byte-for-byte identical, and fired the automatic `backup()`.
+
+Now compares via `canonicalJson` — recursive, keys sorted, undefined-valued keys
+dropped the way `JSON.stringify` does. Array order is still significant. Verified
+that reordered keys compare equal while an added record, a changed field and a
+reordered array all still compare different.
+
+Sorting keys alone was not enough. Every load normalises the cloud copy and writes
+**that** to localStorage without uploading it, so the local copy legitimately holds
+default fields (`person.dob:''`, `exhibition.tasks:[]`, …) the cloud row lacks
+until the next edit pushes them — which read as "records the cloud does not have"
+on every load. The comparison now runs against a `normalizedClone(row.state)`, so
+both sides have been through the same treatment.
+
+**`openWorkspace` ran once per auth event.** `getSession()` and
+`onAuthStateChange` both report the same session at start-up: supabase-js v2 emits
+`INITIAL_SESSION` on subscribe, then `SIGNED_IN`, then `TOKEN_REFRESHED` on focus
+and roughly hourly. Every one re-ran the whole open sequence — hence *many*
+downloads, not one. Calls are now serialised and skipped when that user's
+workspace is already open. Verified: four concurrent start-up events → one open;
+token refresh → none; a different user signing in → one more.
+
+**No automatic download at all now.** The JSON file is produced only by the backup
+button. Where the code used to force a download it now keeps the localStorage
+stash and shows **↓ Download unsynced copy** in the Reports backup panel, which
+appears only while an unrecovered stash exists and disappears once saved. The file
+it writes has the same shape `restore()` reads back. This closes the old gap where
+`supcruise-pre-sync-backup` was written but never readable from the UI.
+
 ---
 
 ## Features
@@ -192,9 +231,10 @@ The console now logs `[SUPCruise] workspace <id> (<role>)` at every sign-in.
    while the payment row itself syncs. Needs Supabase Storage — upload the file,
    keep the returned path in `state`. Separate piece of work.
 2. **Simultaneous editing is last-writer-wins.** Now that two logins share a
-   workspace this is reachable. The loser's version goes to a backup file and to
-   `supcruise-replaced-remote-backup`, but there is no merge. Fine if two people
-   are not typing at once.
+   workspace this is reachable. The loser's version is kept in
+   `supcruise-pre-sync-backup` (recoverable via **↓ Download unsynced copy** in the
+   Reports backup panel) and in `supcruise-replaced-remote-backup`, but there is no
+   merge. Fine if two people are not typing at once.
 3. **Deploys bottleneck on Galya.** Vercel Hobby blocks deployments whose git
    author is not the account owner, so every fix waits on her. Options: Vercel Pro
    (also resolves the non-commercial-use terms, which a real business app does not
@@ -210,10 +250,25 @@ The console now logs `[SUPCruise] workspace <id> (<role>)` at every sign-in.
 
 ## Operational notes
 
+**Repository:** `galyaTal/Sup-Cruise` on GitHub, default branch `main`. Igal
+pushes as the `bivlios` account; Galya commits from github.com on her phone.
+
+**Watch out — the working folder is usually NOT a clone.** `~/Downloads/Sup-Cruise-main`
+is an extracted GitHub zip (that is where the `-main` suffix comes from). It has no
+`.git`, so nothing there is version-controlled and "did you push?" is always no.
+It also goes stale the moment Galya commits from her phone. Never push that folder
+wholesale — on 11 Aug it would have reverted a `DEMO-README.txt` line she had
+committed but the zip predated.
+
+Safe route: `gh repo clone galyaTal/Sup-Cruise` into a temp dir, copy over **only**
+the files actually edited, `git diff` to confirm nothing else moved, then commit and
+push. Comparing every tracked file's hash against the clone is a cheap way to spot
+which files really changed and whether the zip has fallen behind.
+
 **Deploying:** push to `main`, then Galya triggers the build (editing any file on
 github.com from her phone works). Bump the cache-buster in `index.html` for any
 changed JS/CSS, or clients keep serving the old file. Current versions:
-`app.js?v=20260810d`, `enhancements.js?v=20260810c`, `supabase-sync.js?v=7`,
+`app.js?v=20260810d`, `enhancements.js?v=20260811a`, `supabase-sync.js?v=8`,
 `enhancements.css?v=20260810d`.
 
 **Running locally:** `python3 -m http.server 8765` in the project folder, then
