@@ -2048,6 +2048,7 @@
 
   function prepareEvent(eventId, cruiseId) {
     const form = document.querySelector('#eventForm');
+    const deleteButton = document.querySelector('#deleteEventFromModal');
     resetForm(form);
     const event = state.events.find(item => Number(item.id) === Number(eventId));
     form.elements.date.value = cruiseBy(cruiseId)?.startDate || TODAY;
@@ -2058,8 +2059,21 @@
       form.elements.notes.value = cruise ? `Related to ${cruise.name} · ${formatDate(cruise.startDate)}` : '';
     }
     if (event) setForm(form, event);
+    if (deleteButton) {
+      deleteButton.hidden = !event;
+      deleteButton.dataset.deleteEvent = event ? String(event.id) : '';
+    }
     document.querySelector('#eventModalTitle').textContent = event ? 'Edit event' : 'Add event';
     openModal('eventModal');
+  }
+
+  function deleteCalendarEvent(eventId) {
+    const event = state.events.find(item => Number(item.id) === Number(eventId));
+    if (!event || !askConfirm('Delete this event?')) return;
+    state.events = state.events.filter(item => Number(item.id) !== Number(eventId));
+    closeModal('eventModal');
+    render();
+    showToast('Event deleted');
   }
 
   function handleCalendarItem(kind, identifier) {
@@ -2445,12 +2459,13 @@
     if (calendarItem) handleCalendarItem(calendarItem.dataset.calendarKind, calendarItem.dataset.calendarId);
     const editEventButton = target.closest('[data-edit-event]');
     if (editEventButton) prepareEvent(Number(editEventButton.dataset.editEvent));
-    const deleteEventButton = target.closest('[data-delete-event]');
-    if (deleteEventButton && askConfirm('Delete this event?')) {
-      state.events = state.events.filter(item => Number(item.id) !== Number(deleteEventButton.dataset.deleteEvent));
-      render();
-      showToast('Event deleted');
+    const deleteEventFromModal = target.closest('#deleteEventFromModal');
+    if (deleteEventFromModal) {
+      deleteCalendarEvent(Number(deleteEventFromModal.dataset.deleteEvent));
+      return;
     }
+    const deleteEventButton = target.closest('[data-delete-event]');
+    if (deleteEventButton) deleteCalendarEvent(Number(deleteEventButton.dataset.deleteEvent));
     const addEventForCruiseButton = target.closest('[data-add-event-for-cruise]');
     if (addEventForCruiseButton) prepareEvent(null, Number(addEventForCruiseButton.dataset.addEventForCruise));
 
