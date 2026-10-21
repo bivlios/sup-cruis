@@ -33,6 +33,35 @@ create table if not exists public.workspace_members (
 
 alter table public.workspace_state add column if not exists workspace_id uuid references public.workspaces(id) on delete cascade;
 
+-- ---------------------------------------------------------------------------
+-- Data API privileges.
+--
+-- Supabase no longer grants new public-schema tables to Data API roles
+-- automatically. Keep these grants beside the table definitions so fresh
+-- projects, preview branches and database resets expose only what the app uses.
+-- Anonymous visitors receive no table access. Signed-in users can read the
+-- workspace directory and read/write the shared state; RLS below still decides
+-- which workspace rows each account may access.
+-- ---------------------------------------------------------------------------
+
+revoke all privileges on table
+  public.workspaces,
+  public.workspace_members,
+  public.workspace_state
+from anon, authenticated, service_role;
+
+grant select
+on table public.workspaces, public.workspace_members
+to authenticated;
+
+grant select, insert, update
+on table public.workspace_state
+to authenticated;
+
+grant select, insert, update, delete
+on table public.workspaces, public.workspace_members, public.workspace_state
+to service_role;
+
 -- Backfill: every existing row becomes its own workspace, owned by its current user.
 do $$
 declare
@@ -90,6 +119,7 @@ begin
 end $$;
 
 revoke all on function public.create_my_workspace() from public;
+revoke all on function public.is_workspace_member(uuid) from public;
 grant execute on function public.create_my_workspace() to authenticated;
 grant execute on function public.is_workspace_member(uuid) to authenticated;
 
